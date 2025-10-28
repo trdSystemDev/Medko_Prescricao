@@ -15,6 +15,13 @@
       "when": 1761653304383,
       "tag": "0001_equal_gideon",
       "breakpoints": true
+    },
+    {
+      "idx": 2,
+      "version": "5",
+      "when": 1761687703675,
+      "tag": "0002_redundant_forgotten_one",
+      "breakpoints": true
     }
   ]
 }

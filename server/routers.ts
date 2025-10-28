@@ -15,6 +15,10 @@ import { generatePrescriptionPDF, generateQRCodeData, type PrescriptionPDFData }
 import { signDocument, getCertificateInfo } from "./digital-signature";
 import { storagePut } from "./storage";
 import { sendPrescription } from "./zenvia";
+import { getDb } from "./db";
+import { certificates, examRequests } from "../drizzle/schema";
+import { eq } from "drizzle-orm";
+import { TRPCError } from "@trpc/server";
 
 export const appRouter = router({
     // if you need to use socket.io, read and register route in server/_core/index.ts, all api should start with '/api/' so that the gateway can route correctly
@@ -656,6 +660,30 @@ export const appRouter = router({
   }),
 
   // Rotas de templates
+  certificates: router({
+    getById: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input, ctx }) => {
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
+        
+        const result = await db.select().from(certificates).where(eq(certificates.id, input.id)).limit(1);
+        return result[0] || null;
+      }),
+  }),
+
+  examRequests: router({
+    getById: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ input, ctx }) => {
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
+        
+        const result = await db.select().from(examRequests).where(eq(examRequests.id, input.id)).limit(1);
+        return result[0] || null;
+      }),
+  }),
+
   templates: router({
     list: protectedProcedure
       .input(z.object({ tipo: z.string().optional() }))

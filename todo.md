@@ -275,3 +275,10 @@
 ## Bugs Reportados
 - [x] Corrigir erro de criptografia ao cadastrar paciente
 - [x] Criar página de edição de paciente (/pacientes/:id)
+- [ ] Implementar modal de configuração de certificado digital
+- [ ] Implementar modal de configuração da Zenvia
+
+## Páginas Faltantes
+- [x] Criar página de visualização/edição de prescrição (/prescricao/:id)
+- [ ] Criar página de visualização/edição de atestado (/atestado/:id)
+- [ ] Criar página de visualização/edição de pedido de exame (/exame/:id)

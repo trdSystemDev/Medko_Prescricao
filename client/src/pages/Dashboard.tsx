@@ -70,7 +70,7 @@ export default function Dashboard() {
         {/* Header */}
         <div>
           <h1 className="text-3xl font-bold text-gray-900">Dashboard</h1>
-          <p className="text-gray-600 mt-2">Bem-vindo ao Medko</p>
+          <p className="text-gray-600 mt-2">Bem-vindo ao Medko - Sua plataforma completa de prescrição médica digital</p>
         </div>
 
         {/* Stats Grid */}

@@ -1,4 +1,4 @@
-import { int, mysqlEnum, mysqlTable, text, timestamp, varchar } from "drizzle-orm/mysql-core";
+import { int, longtext, mysqlEnum, mysqlTable, text, timestamp, varchar } from "drizzle-orm/mysql-core";
 
 /**
  * Core user table backing auth flow.
@@ -73,7 +73,7 @@ export const medications = mysqlTable("medications", {
   // Composição
   principioAtivo: text("principioAtivo"),
   tarja: varchar("tarja", { length: 50 }),
-  apresentacoes: text("apresentacoes"), // JSON string
+  apresentacoes: longtext("apresentacoes"), // JSON string - pode ser muito grande
   
   // Referência e classificação
   medicamentoReferencia: text("medicamentoReferencia"),
@@ -81,9 +81,9 @@ export const medications = mysqlTable("medications", {
   categoriaRegulatoria: varchar("categoriaRegulatoria", { length: 50 }),
   
   // Bulas
-  bulaTxt: text("bulaTxt"),
+  bulaTxt: longtext("bulaTxt"),
   bulaPdfUrl: text("bulaPdfUrl"), // URL no S3
-  bulaTxtProfissional: text("bulaTxtProfissional"),
+  bulaTxtProfissional: longtext("bulaTxtProfissional"),
   bulaPdfProfissionalUrl: text("bulaPdfProfissionalUrl"), // URL no S3
   
   // Regulatório

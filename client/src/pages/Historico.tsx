@@ -14,9 +14,11 @@ import { trpc } from '@/lib/trpc';
 import { FileText, Search, Eye, Download, Send } from 'lucide-react';
 import { useState } from 'react';
 import { toast } from 'sonner';
+import { useLocation } from 'wouter';
 
 export default function Historico() {
   const [searchTerm, setSearchTerm] = useState('');
+  const [, setLocation] = useLocation();
   const { data: prescriptions, isLoading } = trpc.prescriptions.list.useQuery();
 
   const filteredPrescriptions = prescriptions?.filter((p) =>
@@ -109,7 +111,12 @@ export default function Historico() {
                       </TableCell>
                       <TableCell className="text-right">
                         <div className="flex justify-end gap-2">
-                          <Button variant="outline" size="sm" title="Visualizar">
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            title="Visualizar"
+                            onClick={() => setLocation(`/prescricao/${prescription.id}`)}
+                          >
                             <Eye className="h-4 w-4" />
                           </Button>
                           {prescription.pdfUrl && (
