@@ -2,7 +2,7 @@ import { useParams, useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, Download, Send } from "lucide-react";
+import { ArrowLeft, Download, Send, FileText, Printer } from "lucide-react";
 import { toast } from "sonner";
 import DashboardLayout from "@/components/DashboardLayout";
 
@@ -14,6 +14,10 @@ export default function VisualizarAtestado() {
     { id: parseInt(id!) },
     { enabled: !!id }
   );
+
+  const handlePrint = () => {
+    window.print();
+  };
 
   if (isLoading) {
     return (
@@ -65,6 +69,11 @@ export default function VisualizarAtestado() {
                 </a>
               </Button>
             )}
+            
+            <Button variant="outline" onClick={handlePrint}>
+              <Printer className="w-4 h-4 mr-2" />
+              Imprimir
+            </Button>
           </div>
         </div>
 

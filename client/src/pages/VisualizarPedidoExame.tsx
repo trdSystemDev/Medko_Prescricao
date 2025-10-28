@@ -2,7 +2,7 @@ import { useAuth } from "@/_core/hooks/useAuth";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { trpc } from "@/lib/trpc";
-import { ArrowLeft, Download, Edit, FileText, Loader2, Send } from "lucide-react";
+import { ArrowLeft, Download, Edit, FileText, Loader2, Send, Printer } from "lucide-react";
 import { useEffect, useState } from "react";
 import { useLocation, useRoute } from "wouter";
 import { toast } from "sonner";
@@ -25,6 +25,10 @@ export default function VisualizarPedidoExame() {
     { id: examRequest?.patientId! },
     { enabled: !!examRequest?.patientId }
   );
+
+  const handlePrint = () => {
+    window.print();
+  };
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -89,6 +93,10 @@ export default function VisualizarPedidoExame() {
                 Ver PDF
               </Button>
             )}
+            <Button variant="outline" onClick={handlePrint}>
+              <Printer className="mr-2 h-4 w-4" />
+              Imprimir
+            </Button>
             <Button onClick={() => setEditMode(!editMode)}>
               <Edit className="mr-2 h-4 w-4" />
               {editMode ? 'Cancelar Edição' : 'Editar'}

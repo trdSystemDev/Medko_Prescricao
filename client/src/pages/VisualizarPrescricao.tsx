@@ -2,7 +2,7 @@ import { useParams, useLocation } from "wouter";
 import { trpc } from "@/lib/trpc";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowLeft, Download, Send } from "lucide-react";
+import { ArrowLeft, Download, Send, FileText, Printer } from "lucide-react";
 import { toast } from "sonner";
 import DashboardLayout from "@/components/DashboardLayout";
 
@@ -15,6 +15,18 @@ export default function VisualizarPrescricao() {
     { enabled: !!id }
   );
 
+  const generatePdfMutation = trpc.prescriptions.generatePDF.useMutation({
+    onSuccess: (data) => {
+      toast.success("PDF gerado com sucesso!");
+      if (data.pdfUrl) {
+        window.open(data.pdfUrl, '_blank');
+      }
+    },
+    onError: (error) => {
+      toast.error(`Erro ao gerar PDF: ${error.message}`);
+    },
+  });
+
   const sendMutation = trpc.prescriptions.send.useMutation({
     onSuccess: () => {
       toast.success("Prescrição enviada com sucesso!");
@@ -23,6 +35,10 @@ export default function VisualizarPrescricao() {
       toast.error(`Erro ao enviar: ${error.message}`);
     },
   });
+
+  const handlePrint = () => {
+    window.print();
+  };
 
   if (isLoading) {
     return (
@@ -68,6 +84,15 @@ export default function VisualizarPrescricao() {
           </div>
           
           <div className="flex gap-2">
+            <Button
+              variant="outline"
+              onClick={() => generatePdfMutation.mutate({ prescriptionId: prescription.id })}
+              disabled={generatePdfMutation.isPending}
+            >
+              <FileText className="w-4 h-4 mr-2" />
+              {generatePdfMutation.isPending ? 'Gerando...' : 'Gerar PDF'}
+            </Button>
+            
             {prescription.pdfUrl && (
               <Button variant="outline" asChild>
                 <a href={prescription.pdfUrl} target="_blank" rel="noopener noreferrer">
@@ -76,6 +101,12 @@ export default function VisualizarPrescricao() {
                 </a>
               </Button>
             )}
+            
+            <Button variant="outline" onClick={handlePrint}>
+              <Printer className="w-4 h-4 mr-2" />
+              Imprimir
+            </Button>
+            
             <Button
               onClick={() => sendMutation.mutate({
                 prescriptionId: prescription.id,

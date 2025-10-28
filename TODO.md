@@ -69,4 +69,9 @@
 
 - [x] Erro 404 na versão publicada ao acessar /prescricao/60001 - rotas reorganizadas e corrigidas
 
-- [ ] Verificar por que as páginas de visualização não aparecem na versão publicada
+- [x] Verificar por que as páginas de visualização não aparecem na versão publicada - resolvido com novo checkpoint
+
+- [x] Adicionar botão "Gerar PDF" nas páginas de visualização (prescrições, atestados, pedidos de exames)
+  - Prescrições: Botão Gerar PDF + Baixar PDF + Imprimir + Enviar WhatsApp
+  - Atestados: Botão Baixar PDF + Imprimir
+  - Pedidos de Exames: Botão Ver PDF + Imprimir
