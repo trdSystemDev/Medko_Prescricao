@@ -33,8 +33,8 @@ export const appRouter = router({
   // Rotas de pacientes
   patients: router({
     list: protectedProcedure.query(async ({ ctx }) => {
-      if (ctx.user.role !== 'doctor') {
-        throw new Error('Only doctors can access patients');
+      if (ctx.user.role !== 'doctor' && ctx.user.role !== 'admin') {
+        throw new Error('Only doctors and admins can access patients');
       }
 
       await logAudit({
@@ -51,8 +51,8 @@ export const appRouter = router({
     getById: protectedProcedure
       .input(z.object({ id: z.number() }))
       .query(async ({ ctx, input }) => {
-        if (ctx.user.role !== 'doctor') {
-          throw new Error('Only doctors can access patients');
+        if (ctx.user.role !== 'doctor' && ctx.user.role !== 'admin') {
+          throw new Error('Only doctors and admins can access patients');
         }
 
         const patient = await db.getPatientById(input.id, ctx.user.id);
@@ -73,20 +73,20 @@ export const appRouter = router({
     create: protectedProcedure
       .input(
         z.object({
-          nomeCompleto: z.string().min(3),
+          nomeCompleto: z.string(),
           cpf: z.string().optional(),
           rg: z.string().optional(),
           dataNascimento: z.string().optional(),
-          sexo: z.enum(['M', 'F', 'O']).optional(),
+          sexo: z.string().optional(),
           telefone: z.string().optional(),
-          email: z.string().email().optional(),
+          email: z.string().optional(),
           endereco: z.string().optional(),
           observacoes: z.string().optional(),
         })
       )
       .mutation(async ({ ctx, input }) => {
-        if (ctx.user.role !== 'doctor') {
-          throw new Error('Only doctors can create patients');
+        if (ctx.user.role !== 'doctor' && ctx.user.role !== 'admin') {
+          throw new Error('Only doctors and admins can create patients');
         }
 
         const patient = await db.createPatient(ctx.user.id, input);
@@ -121,7 +121,7 @@ export const appRouter = router({
         })
       )
       .mutation(async ({ ctx, input }) => {
-        if (ctx.user.role !== 'doctor') {
+        if (ctx.user.role !== 'doctor' && ctx.user.role !== 'admin') {
           throw new Error('Only doctors can update patients');
         }
 
@@ -144,7 +144,7 @@ export const appRouter = router({
     delete: protectedProcedure
       .input(z.object({ id: z.number() }))
       .mutation(async ({ ctx, input }) => {
-        if (ctx.user.role !== 'doctor') {
+        if (ctx.user.role !== 'doctor' && ctx.user.role !== 'admin') {
           throw new Error('Only doctors can delete patients');
         }
 
@@ -167,7 +167,7 @@ export const appRouter = router({
   // Rotas de médicos
   doctors: router({
     me: protectedProcedure.query(async ({ ctx }) => {
-      if (ctx.user.role !== 'doctor') {
+      if (ctx.user.role !== 'doctor' && ctx.user.role !== 'admin') {
         throw new Error('Only doctors can access this endpoint');
       }
       return ctx.user;
@@ -185,7 +185,7 @@ export const appRouter = router({
         })
       )
       .mutation(async ({ ctx, input }) => {
-        if (ctx.user.role !== 'doctor') {
+        if (ctx.user.role !== 'doctor' && ctx.user.role !== 'admin') {
           throw new Error('Only doctors can update profile');
         }
 
@@ -311,8 +311,8 @@ export const appRouter = router({
   // Rotas de prescrições
   prescriptions: router({
     list: protectedProcedure.query(async ({ ctx }) => {
-      if (ctx.user.role !== 'doctor') {
-        throw new Error('Only doctors can access prescriptions');
+      if (ctx.user.role !== 'doctor' && ctx.user.role !== 'admin') {
+        throw new Error('Only doctors and admins can access prescriptions');
       }
 
       return db.getPrescriptionsByDoctor(ctx.user.id);
@@ -321,7 +321,7 @@ export const appRouter = router({
     getById: protectedProcedure
       .input(z.object({ id: z.number() }))
       .query(async ({ ctx, input }) => {
-        if (ctx.user.role !== 'doctor') {
+        if (ctx.user.role !== 'doctor' && ctx.user.role !== 'admin') {
           throw new Error('Only doctors can access prescriptions');
         }
 
@@ -343,7 +343,7 @@ export const appRouter = router({
     getByPatient: protectedProcedure
       .input(z.object({ patientId: z.number() }))
       .query(async ({ ctx, input }) => {
-        if (ctx.user.role !== 'doctor') {
+        if (ctx.user.role !== 'doctor' && ctx.user.role !== 'admin') {
           throw new Error('Only doctors can access prescriptions');
         }
 
@@ -370,7 +370,7 @@ export const appRouter = router({
         })
       )
       .mutation(async ({ ctx, input }) => {
-        if (ctx.user.role !== 'doctor') {
+        if (ctx.user.role !== 'doctor' && ctx.user.role !== 'admin') {
           throw new Error('Only doctors can validate prescriptions');
         }
 
@@ -409,7 +409,7 @@ export const appRouter = router({
         })
       )
       .mutation(async ({ ctx, input }) => {
-        if (ctx.user.role !== 'doctor') {
+        if (ctx.user.role !== 'doctor' && ctx.user.role !== 'admin') {
           throw new Error('Only doctors can create prescriptions');
         }
 
@@ -460,7 +460,7 @@ export const appRouter = router({
     generatePDF: protectedProcedure
       .input(z.object({ prescriptionId: z.number() }))
       .mutation(async ({ ctx, input }) => {
-        if (ctx.user.role !== 'doctor') {
+        if (ctx.user.role !== 'doctor' && ctx.user.role !== 'admin') {
           throw new Error('Only doctors can generate PDFs');
         }
 
@@ -533,7 +533,7 @@ export const appRouter = router({
     sign: protectedProcedure
       .input(z.object({ prescriptionId: z.number() }))
       .mutation(async ({ ctx, input }) => {
-        if (ctx.user.role !== 'doctor') {
+        if (ctx.user.role !== 'doctor' && ctx.user.role !== 'admin') {
           throw new Error('Only doctors can sign prescriptions');
         }
 
@@ -584,7 +584,7 @@ export const appRouter = router({
         })
       )
       .mutation(async ({ ctx, input }) => {
-        if (ctx.user.role !== 'doctor') {
+        if (ctx.user.role !== 'doctor' && ctx.user.role !== 'admin') {
           throw new Error('Only doctors can send prescriptions');
         }
 

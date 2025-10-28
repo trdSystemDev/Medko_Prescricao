@@ -238,15 +238,19 @@
 - [ ] Criar guia de uso para médicos
 
 ## Frontend - Implementação Completa
-- [ ] Copiar logo para client/public/
-- [ ] Configurar cores do tema (azul #2C3E50, laranja #FF8C42)
-- [ ] Criar layout principal com sidebar
+- [x] Copiar logo para client/public/
+- [x] Configurar cores do tema (azul #2C3E50, laranja #FF8C42)
+- [x] Criar layout principal com sidebar
 - [ ] Criar página de login
-- [ ] Criar dashboard do médico
-- [ ] Criar tela de gestão de pacientes
-- [ ] Criar formulário de prescrição médica
-- [ ] Criar busca de medicamentos com autocomplete
+- [x] Criar dashboard do médico
+- [x] Criar tela de gestão de pacientes
+- [x] Criar formulário de cadastro de pacientes
+- [x] Criar formulário de prescrição médica
+- [x] Criar busca de medicamentos com autocomplete
 - [ ] Criar visualizador de bulas (PDF)
 - [ ] Criar formulário de atestados
-- [ ] Criar histórico de documentos
-- [ ] Integrar todas as telas com APIs tRPC
+- [x] Criar histórico de documentos
+- [x] Integrar todas as telas com APIs tRPC
+
+## Bugs
+- [x] Corrigir verificação de role nas APIs (aceitar admin e doctor)

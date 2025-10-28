@@ -6,6 +6,9 @@ import ErrorBoundary from "./components/ErrorBoundary";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import Dashboard from "./pages/Dashboard";
 import Pacientes from "./pages/Pacientes";
+import NovoPaciente from "./pages/NovoPaciente";
+import NovaPrescricao from "./pages/NovaPrescricao";
+import Historico from "./pages/Historico";
 
 function Router() {
   // make sure to consider if you need authentication for certain routes
@@ -13,6 +16,9 @@ function Router() {
     <Switch>
       <Route path={"/"} component={Dashboard} />
       <Route path="/pacientes" component={Pacientes} />
+      <Route path="/pacientes/novo" component={NovoPaciente} />
+      <Route path="/prescricao/nova" component={NovaPrescricao} />
+      <Route path="/historico" component={Historico} />
       <Route path={"/404"} component={NotFound} />
       {/* Final fallback route */}
       <Route component={NotFound} />
