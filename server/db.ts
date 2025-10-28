@@ -89,4 +89,298 @@ export async function getUserByOpenId(openId: string) {
   return result.length > 0 ? result[0] : undefined;
 }
 
-// TODO: add feature queries here as your schema grows.
+// Pacientes
+import { patients, type InsertPatient, type Patient } from '../drizzle/schema';
+import { encrypt, decrypt, encryptFields, decryptFields } from './encryption';
+
+// Campos que devem ser criptografados
+const ENCRYPTED_PATIENT_FIELDS: (keyof InsertPatient)[] = [
+  'cpf',
+  'rg',
+  'dataNascimento',
+  'telefone',
+  'email',
+  'endereco',
+];
+
+export async function createPatient(doctorId: number, patientData: Omit<InsertPatient, 'doctorId'>): Promise<Patient> {
+  const db = await getDb();
+  if (!db) {
+    throw new Error('Database not available');
+  }
+
+  // Criptografar campos sensíveis
+  const encryptedData = encryptFields(
+    { ...patientData, doctorId },
+    ENCRYPTED_PATIENT_FIELDS
+  );
+
+  const [result] = await db.insert(patients).values(encryptedData).$returningId();
+  
+  // Buscar paciente criado
+  const [patient] = await db.select().from(patients).where(eq(patients.id, result.id));
+  
+  return patient;
+}
+
+export async function getPatientById(patientId: number, doctorId: number): Promise<Patient | null> {
+  const db = await getDb();
+  if (!db) {
+    throw new Error('Database not available');
+  }
+
+  const [patient] = await db
+    .select()
+    .from(patients)
+    .where(eq(patients.id, patientId));
+
+  if (!patient) return null;
+
+  // Verificar se o paciente pertence ao médico
+  if (patient.doctorId !== doctorId) {
+    throw new Error('Unauthorized: Patient does not belong to this doctor');
+  }
+
+  // Descriptografar campos sensíveis
+  return decryptFields(patient, ENCRYPTED_PATIENT_FIELDS);
+}
+
+export async function getPatientsByDoctor(doctorId: number): Promise<Patient[]> {
+  const db = await getDb();
+  if (!db) {
+    throw new Error('Database not available');
+  }
+
+  const patientsList = await db
+    .select()
+    .from(patients)
+    .where(eq(patients.doctorId, doctorId))
+    .orderBy(patients.nomeCompleto);
+
+  // Descriptografar campos sensíveis de todos os pacientes
+  return patientsList.map(patient => 
+    decryptFields(patient, ENCRYPTED_PATIENT_FIELDS)
+  );
+}
+
+export async function updatePatient(
+  patientId: number,
+  doctorId: number,
+  patientData: Partial<Omit<InsertPatient, 'id' | 'doctorId'>>
+): Promise<Patient> {
+  const db = await getDb();
+  if (!db) {
+    throw new Error('Database not available');
+  }
+
+  // Verificar se o paciente pertence ao médico
+  const existing = await getPatientById(patientId, doctorId);
+  if (!existing) {
+    throw new Error('Patient not found or unauthorized');
+  }
+
+  // Criptografar campos sensíveis
+  const encryptedData = encryptFields(patientData as any, ENCRYPTED_PATIENT_FIELDS) as Partial<InsertPatient>;
+
+  await db
+    .update(patients)
+    .set(encryptedData)
+    .where(eq(patients.id, patientId));
+
+  // Retornar paciente atualizado
+  return getPatientById(patientId, doctorId) as Promise<Patient>;
+}
+
+export async function deletePatient(patientId: number, doctorId: number): Promise<void> {
+  const db = await getDb();
+  if (!db) {
+    throw new Error('Database not available');
+  }
+
+  // Verificar se o paciente pertence ao médico
+  const existing = await getPatientById(patientId, doctorId);
+  if (!existing) {
+    throw new Error('Patient not found or unauthorized');
+  }
+
+  // LGPD: Anonimizar dados ao invés de deletar
+  await db
+    .update(patients)
+    .set({
+      nomeCompleto: 'Paciente Anonimizado',
+      cpf: null,
+      rg: null,
+      dataNascimento: null,
+      telefone: null,
+      email: null,
+      endereco: null,
+      observacoes: 'Dados anonimizados conforme LGPD',
+    })
+    .where(eq(patients.id, patientId));
+}
+
+// Medicamentos
+import { medications, type Medication } from '../drizzle/schema';
+import { like, or, and, sql } from 'drizzle-orm';
+
+export async function searchMedications(query: string, filters?: {
+  tarja?: string;
+  categoriaRegulatoria?: string;
+  situacaoRegistro?: string;
+}): Promise<Medication[]> {
+  const db = await getDb();
+  if (!db) {
+    throw new Error('Database not available');
+  }
+
+  const searchPattern = `%${query}%`;
+  
+  let conditions = or(
+    like(medications.nomeProduto, searchPattern),
+    like(medications.principioAtivo, searchPattern),
+    like(medications.classesTerapeuticas, searchPattern)
+  );
+
+  // Aplicar filtros adicionais
+  const filterConditions = [];
+  
+  if (filters?.tarja) {
+    filterConditions.push(eq(medications.tarja, filters.tarja));
+  }
+  
+  if (filters?.categoriaRegulatoria) {
+    filterConditions.push(eq(medications.categoriaRegulatoria, filters.categoriaRegulatoria));
+  }
+  
+  if (filters?.situacaoRegistro) {
+    filterConditions.push(eq(medications.situacaoRegistro, filters.situacaoRegistro));
+  } else {
+    // Por padrão, mostrar apenas medicamentos ativos
+    filterConditions.push(eq(medications.situacaoRegistro, 'ATIVO'));
+  }
+
+  const finalConditions = filterConditions.length > 0
+    ? and(conditions, ...filterConditions)
+    : conditions;
+
+  const results = await db
+    .select()
+    .from(medications)
+    .where(finalConditions)
+    .limit(50); // Limitar a 50 resultados
+
+  return results;
+}
+
+export async function getMedicationById(medicationId: number): Promise<Medication | null> {
+  const db = await getDb();
+  if (!db) {
+    throw new Error('Database not available');
+  }
+
+  const [medication] = await db
+    .select()
+    .from(medications)
+    .where(eq(medications.id, medicationId));
+
+  return medication || null;
+}
+
+export async function getMedicationByNumeroProcesso(numeroProcesso: string): Promise<Medication | null> {
+  const db = await getDb();
+  if (!db) {
+    throw new Error('Database not available');
+  }
+
+  const [medication] = await db
+    .select()
+    .from(medications)
+    .where(eq(medications.numeroProcesso, numeroProcesso));
+
+  return medication || null;
+}
+
+// Prescrições
+import { prescriptions, type Prescription, type InsertPrescription } from '../drizzle/schema';
+import { desc } from 'drizzle-orm';
+
+export async function createPrescription(prescriptionData: InsertPrescription): Promise<Prescription> {
+  const db = await getDb();
+  if (!db) {
+    throw new Error('Database not available');
+  }
+
+  const [result] = await db.insert(prescriptions).values(prescriptionData).$returningId();
+  const [prescription] = await db.select().from(prescriptions).where(eq(prescriptions.id, result.id));
+  
+  return prescription;
+}
+
+export async function getPrescriptionById(prescriptionId: number, doctorId: number): Promise<Prescription | null> {
+  const db = await getDb();
+  if (!db) {
+    throw new Error('Database not available');
+  }
+
+  const [prescription] = await db
+    .select()
+    .from(prescriptions)
+    .where(eq(prescriptions.id, prescriptionId));
+
+  if (!prescription) return null;
+
+  // Verificar se a prescrição pertence ao médico
+  if (prescription.doctorId !== doctorId) {
+    throw new Error('Unauthorized: Prescription does not belong to this doctor');
+  }
+
+  return prescription;
+}
+
+export async function getPrescriptionsByDoctor(doctorId: number, limit: number = 50): Promise<Prescription[]> {
+  const db = await getDb();
+  if (!db) {
+    throw new Error('Database not available');
+  }
+
+  return db
+    .select()
+    .from(prescriptions)
+    .where(eq(prescriptions.doctorId, doctorId))
+    .orderBy(desc(prescriptions.createdAt))
+    .limit(limit);
+}
+
+export async function getPrescriptionsByPatient(patientId: number, doctorId: number): Promise<Prescription[]> {
+  const db = await getDb();
+  if (!db) {
+    throw new Error('Database not available');
+  }
+
+  return db
+    .select()
+    .from(prescriptions)
+    .where(and(eq(prescriptions.patientId, patientId), eq(prescriptions.doctorId, doctorId)))
+    .orderBy(desc(prescriptions.createdAt));
+}
+
+export async function updatePrescription(
+  prescriptionId: number,
+  doctorId: number,
+  data: Partial<InsertPrescription>
+): Promise<Prescription> {
+  const db = await getDb();
+  if (!db) {
+    throw new Error('Database not available');
+  }
+
+  // Verificar autorização
+  const existing = await getPrescriptionById(prescriptionId, doctorId);
+  if (!existing) {
+    throw new Error('Prescription not found or unauthorized');
+  }
+
+  await db.update(prescriptions).set(data).where(eq(prescriptions.id, prescriptionId));
+
+  return getPrescriptionById(prescriptionId, doctorId) as Promise<Prescription>;
+}

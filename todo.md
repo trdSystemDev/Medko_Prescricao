@@ -79,21 +79,21 @@
 - [x] Criar tabela de logs de auditoria (audit_logs)
 
 ## Backend - API e Lógica de Negócio
-- [ ] Implementar autenticação e autorização de médicos
+- [x] Implementar autenticação e autorização de médicos
 - [ ] Validar CRM do médico (consulta ao Cadastro Nacional de Médicos do CFM)
-- [ ] Criar endpoints para CRUD de pacientes
-- [ ] Criar endpoints para busca de medicamentos:
+- [x] Criar endpoints para CRUD de pacientes
+- [x] Criar endpoints para busca de medicamentos:
   - Busca por nome do produto
   - Busca por princípio ativo
   - Busca por classe terapêutica
   - Filtro por tarja (controle de receituário)
   - Filtro por situação do registro (ATIVO)
-- [ ] Criar endpoint para obter detalhes completos do medicamento
-- [ ] Criar endpoint para listar apresentações de um medicamento
-- [ ] Criar endpoints para obter bulas de medicamento (paciente e profissional)
-- [ ] Criar endpoint para servir PDFs de bulas (com proteção contra download)
+- [x] Criar endpoint para obter detalhes completos do medicamento
+- [x] Criar endpoint para listar apresentações de um medicamento
+- [x] Criar endpoints para obter bulas de medicamento (paciente e profissional)
+- [x] Criar endpoint para servir PDFs de bulas (com proteção contra download)
 - [ ] Criar endpoints para busca de exames
-- [ ] Criar endpoints para criação de prescrições:
+- [x] Criar endpoints para criação de prescrições:
   - Validar tipo de receituário vs tarja do medicamento
   - Validar quantidade de medicamentos por receita
   - Validar validade conforme tipo
