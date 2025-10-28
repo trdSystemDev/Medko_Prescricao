@@ -236,3 +236,17 @@
 - [ ] Documentar processo de configuração de certificado digital
 - [ ] Documentar integração com Zenvia
 - [ ] Criar guia de uso para médicos
+
+## Frontend - Implementação Completa
+- [ ] Copiar logo para client/public/
+- [ ] Configurar cores do tema (azul #2C3E50, laranja #FF8C42)
+- [ ] Criar layout principal com sidebar
+- [ ] Criar página de login
+- [ ] Criar dashboard do médico
+- [ ] Criar tela de gestão de pacientes
+- [ ] Criar formulário de prescrição médica
+- [ ] Criar busca de medicamentos com autocomplete
+- [ ] Criar visualizador de bulas (PDF)
+- [ ] Criar formulário de atestados
+- [ ] Criar histórico de documentos
+- [ ] Integrar todas as telas com APIs tRPC
