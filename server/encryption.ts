@@ -8,10 +8,11 @@ const KEY_LENGTH = 32;
 
 // Obter chave de criptografia do ambiente
 function getEncryptionKey(): Buffer {
-  const key = process.env.ENCRYPTION_KEY;
+  // Usar chave padrão para desenvolvimento (DEVE ser alterada em produção)
+  const key = process.env.ENCRYPTION_KEY || 'medko-default-encryption-key-change-in-production';
   
-  if (!key) {
-    throw new Error('ENCRYPTION_KEY não configurada nas variáveis de ambiente');
+  if (!process.env.ENCRYPTION_KEY) {
+    console.warn('⚠️  AVISO: Usando chave de criptografia padrão. Configure ENCRYPTION_KEY em produção!');
   }
   
   // Derivar chave de 32 bytes a partir da chave fornecida

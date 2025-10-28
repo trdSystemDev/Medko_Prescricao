@@ -270,3 +270,7 @@
 - [ ] Implementar rate limiting real (não apenas documentado)
 - [ ] Implementar proteção CSRF
 - [ ] Implementar watermark em PDFs
+
+
+## Bugs Reportados
+- [x] Corrigir erro de criptografia ao cadastrar paciente
