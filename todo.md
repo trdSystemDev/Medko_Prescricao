@@ -241,15 +241,16 @@
 - [x] Copiar logo para client/public/
 - [x] Configurar cores do tema (azul #2C3E50, laranja #FF8C42)
 - [x] Criar layout principal com sidebar
-- [ ] Criar página de login
+- [x] Criar página de login (OAuth Manus)
 - [x] Criar dashboard do médico
 - [x] Criar tela de gestão de pacientes
 - [x] Criar formulário de cadastro de pacientes
 - [x] Criar formulário de prescrição médica
 - [x] Criar busca de medicamentos com autocomplete
-- [ ] Criar visualizador de bulas (PDF)
-- [ ] Criar formulário de atestados
+- [x] Criar visualizador de bulas (PDF com iframe)
+- [x] Criar formulário de atestados
 - [x] Criar histórico de documentos
+- [x] Criar página de configurações do médico
 - [x] Integrar todas as telas com APIs tRPC
 
 ## Bugs
