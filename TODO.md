@@ -75,3 +75,8 @@
   - Prescrições: Botão Gerar PDF + Baixar PDF + Imprimir + Enviar WhatsApp
   - Atestados: Botão Baixar PDF + Imprimir
   - Pedidos de Exames: Botão Ver PDF + Imprimir
+
+- [x] Corrigir geração de atestados - API de criação implementada
+  - API certificates.create adicionada ao backend
+  - Página NovoAtestado.tsx integrada com a API
+  - Validação de campos e auditoria implementadas

@@ -26,6 +26,16 @@ export default function NovoAtestado() {
     p.nomeCompleto.toLowerCase().includes(searchPatient.toLowerCase())
   );
 
+  const createMutation = trpc.certificates.create.useMutation({
+    onSuccess: () => {
+      toast.success('Atestado criado com sucesso!');
+      setLocation('/historico');
+    },
+    onError: (error) => {
+      toast.error(`Erro ao criar atestado: ${error.message}`);
+    },
+  });
+
   const handleSubmit = () => {
     if (!selectedPatientId) {
       toast.error('Selecione um paciente');
@@ -37,8 +47,14 @@ export default function NovoAtestado() {
       return;
     }
 
-    toast.success('Atestado criado com sucesso!');
-    setLocation('/historico');
+    createMutation.mutate({
+      patientId: selectedPatientId,
+      tipo: tipoAtestado as 'comparecimento' | 'afastamento' | 'obito',
+      cid: cid || undefined,
+      dataInicio: dataInicio || undefined,
+      dataFim: dataFim || undefined,
+      observacoes: observacoes || undefined,
+    });
   };
 
   return (

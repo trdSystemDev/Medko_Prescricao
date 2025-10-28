@@ -659,7 +659,7 @@ export const appRouter = router({
       }),
   }),
 
-  // Rotas de templates
+  // Rotas de atestados
   certificates: router({
     getById: protectedProcedure
       .input(z.object({ id: z.number() }))
@@ -669,6 +669,49 @@ export const appRouter = router({
         
         const result = await db.select().from(certificates).where(eq(certificates.id, input.id)).limit(1);
         return result[0] || null;
+      }),
+
+    create: protectedProcedure
+      .input(z.object({
+        patientId: z.number(),
+        tipo: z.enum(['comparecimento', 'afastamento', 'obito']),
+        cid: z.string().optional(),
+        dataInicio: z.string().optional(),
+        dataFim: z.string().optional(),
+        observacoes: z.string().optional(),
+      }))
+      .mutation(async ({ input, ctx }) => {
+        if (ctx.user.role !== 'doctor' && ctx.user.role !== 'admin') {
+          throw new TRPCError({ code: 'FORBIDDEN', message: 'Only doctors can create certificates' });
+        }
+
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
+
+        // Criar atestado
+        const [result] = await db.insert(certificates).values({
+          doctorId: ctx.user.id,
+          patientId: input.patientId,
+          tipo: input.tipo,
+          cid: input.cid || null,
+          dataInicio: input.dataInicio ? new Date(input.dataInicio) : null,
+          dataFim: input.dataFim ? new Date(input.dataFim) : null,
+          observacoes: input.observacoes || null,
+        });
+
+        const certificateId = Number(result.insertId);
+
+        await logAudit({
+          userId: ctx.user.id,
+          userRole: ctx.user.role,
+          action: 'CREATE_CERTIFICATE',
+          resourceType: 'certificate',
+          resourceId: certificateId,
+          ipAddress: getClientIp(ctx.req),
+          userAgent: getUserAgent(ctx.req),
+        });
+
+        return { id: certificateId, success: true };
       }),
   }),
 
