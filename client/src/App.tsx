@@ -20,6 +20,7 @@ import Templates from "./pages/Templates";
 import EditarPaciente from "./pages/EditarPaciente";
 
 function Router() {
+  // Rotas do sistema Medko - Páginas de visualização implementadas
   // make sure to consider if you need authentication for certain routes
   return (
     <Switch>
