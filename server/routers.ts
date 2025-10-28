@@ -11,6 +11,10 @@ import {
   getDataValidade,
   type TipoReceituario,
 } from "./prescription-validator";
+import { generatePrescriptionPDF, generateQRCodeData, type PrescriptionPDFData } from "./pdf-generator";
+import { signDocument, getCertificateInfo } from "./digital-signature";
+import { storagePut } from "./storage";
+import { sendPrescription } from "./zenvia";
 
 export const appRouter = router({
     // if you need to use socket.io, read and register route in server/_core/index.ts, all api should start with '/api/' so that the gateway can route correctly
@@ -451,6 +455,185 @@ export const appRouter = router({
           prescription,
           validation,
         };
+      }),
+
+    generatePDF: protectedProcedure
+      .input(z.object({ prescriptionId: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== 'doctor') {
+          throw new Error('Only doctors can generate PDFs');
+        }
+
+        // Buscar prescrição
+        const prescription = await db.getPrescriptionById(input.prescriptionId, ctx.user.id);
+        if (!prescription) {
+          throw new Error('Prescription not found');
+        }
+
+        // Buscar dados do paciente
+        const patient = await db.getPatientById(prescription.patientId, ctx.user.id);
+        if (!patient) {
+          throw new Error('Patient not found');
+        }
+
+        // Parsear medicamentos
+        const medications = JSON.parse(prescription.medicamentos);
+
+        // Gerar QR Code data
+        const qrCodeData = generateQRCodeData(prescription.id, ctx.user.id);
+
+        // Preparar dados para PDF
+        const pdfData: PrescriptionPDFData = {
+          prescription: { ...prescription, qrCodeData },
+          doctor: {
+            name: ctx.user.name || 'Médico',
+            crm: ctx.user.crm || '',
+            crmUf: ctx.user.crmUf || '',
+            especialidade: ctx.user.especialidade || undefined,
+            endereco: ctx.user.endereco || undefined,
+            telefone: ctx.user.telefone || undefined,
+          },
+          patient: {
+            nomeCompleto: patient.nomeCompleto,
+            dataNascimento: patient.dataNascimento || undefined,
+            cpf: patient.cpf || undefined,
+          },
+          medications,
+        };
+
+        // Gerar PDF
+        const pdfBuffer = await generatePrescriptionPDF(pdfData);
+
+        // Upload para S3
+        const s3Key = `prescriptions/${prescription.id}_${Date.now()}.pdf`;
+        const { url: pdfUrl } = await storagePut(s3Key, pdfBuffer, 'application/pdf');
+
+        // Atualizar prescrição com URL do PDF e QR Code
+        await db.updatePrescription(input.prescriptionId, ctx.user.id, {
+          pdfUrl,
+          qrCodeData,
+        });
+
+        await logAudit({
+          userId: ctx.user.id,
+          userRole: ctx.user.role,
+          action: 'GENERATE_PRESCRIPTION_PDF',
+          resourceType: ResourceTypes.PRESCRIPTION,
+          resourceId: input.prescriptionId,
+          ipAddress: getClientIp(ctx.req),
+          userAgent: getUserAgent(ctx.req),
+        });
+
+        return {
+          pdfUrl,
+          qrCodeData,
+        };
+      }),
+
+    sign: protectedProcedure
+      .input(z.object({ prescriptionId: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== 'doctor') {
+          throw new Error('Only doctors can sign prescriptions');
+        }
+
+        // Buscar prescrição
+        const prescription = await db.getPrescriptionById(input.prescriptionId, ctx.user.id);
+        if (!prescription) {
+          throw new Error('Prescription not found');
+        }
+
+        // Obter informações do certificado
+        const certInfo = getCertificateInfo({
+          name: ctx.user.name || 'Médico',
+          crm: ctx.user.crm || '',
+          crmUf: ctx.user.crmUf || '',
+        });
+
+        // Assinar documento
+        const signature = await signDocument(prescription.medicamentos, certInfo);
+
+        // Atualizar prescrição
+        await db.updatePrescription(input.prescriptionId, ctx.user.id, {
+          assinado: 1,
+          assinaturaData: signature.timestamp,
+          assinaturaCertificado: JSON.stringify(signature),
+        });
+
+        await logAudit({
+          userId: ctx.user.id,
+          userRole: ctx.user.role,
+          action: AuditActions.SIGN_PRESCRIPTION,
+          resourceType: ResourceTypes.PRESCRIPTION,
+          resourceId: input.prescriptionId,
+          ipAddress: getClientIp(ctx.req),
+          userAgent: getUserAgent(ctx.req),
+        });
+
+        return {
+          signed: true,
+          signature,
+        };
+      }),
+
+    send: protectedProcedure
+      .input(
+        z.object({
+          prescriptionId: z.number(),
+          channel: z.enum(['sms', 'whatsapp']),
+        })
+      )
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== 'doctor') {
+          throw new Error('Only doctors can send prescriptions');
+        }
+
+        // Buscar prescrição
+        const prescription = await db.getPrescriptionById(input.prescriptionId, ctx.user.id);
+        if (!prescription) {
+          throw new Error('Prescription not found');
+        }
+
+        if (!prescription.pdfUrl) {
+          throw new Error('PDF not generated yet. Generate PDF first.');
+        }
+
+        // Buscar dados do paciente
+        const patient = await db.getPatientById(prescription.patientId, ctx.user.id);
+        if (!patient) {
+          throw new Error('Patient not found');
+        }
+
+        if (!patient.telefone) {
+          throw new Error('Patient phone number not found');
+        }
+
+        // Enviar via Zenvia
+        const result = await sendPrescription({
+          patientPhone: patient.telefone,
+          patientName: patient.nomeCompleto,
+          doctorName: ctx.user.name || 'Médico',
+          pdfUrl: prescription.pdfUrl,
+          channel: input.channel,
+        });
+
+        await logAudit({
+          userId: ctx.user.id,
+          userRole: ctx.user.role,
+          action: AuditActions.SEND_PRESCRIPTION,
+          resourceType: ResourceTypes.PRESCRIPTION,
+          resourceId: input.prescriptionId,
+          ipAddress: getClientIp(ctx.req),
+          userAgent: getUserAgent(ctx.req),
+          success: result.success,
+          metadata: {
+            channel: input.channel,
+            messageId: result.messageId,
+            error: result.error,
+          },
+        });
+
+        return result;
       }),
   }),
 });

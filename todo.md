@@ -112,18 +112,18 @@
   - Receita Amarela (A): 1 medicamento, 30 dias
   - Receita Retinóides (C2): regras específicas
   - Receita Talidomida (C3): 15 dias
-- [ ] Implementar geração de PDF dos documentos:
+- [x] Implementar geração de PDF dos documentos:
   - Layout profissional com logo e dados do médico
   - QR Code para validação
   - Marca d'água de segurança
   - Formatação conforme tipo de documento
 
 ## Integração com Assinatura Digital ICP-Brasil
-- [ ] Implementar suporte para certificado A1 (arquivo .pfx)
-- [ ] Implementar suporte para certificado A3 (token/cartão USB)
-- [ ] Implementar suporte para certificado em nuvem (CFM)
-- [ ] Gerar QR Code com dados da assinatura (padrão ICP-Brasil)
-- [ ] Criar validador de assinatura digital:
+- [x] Implementar suporte para certificado A1 (arquivo .pfx)
+- [x] Implementar suporte para certificado A3 (token/cartão USB)
+- [x] Implementar suporte para certificado em nuvem (CFM)
+- [x] Gerar QR Code com dados da assinatura (padrão ICP-Brasil)
+- [x] Criar validador de assinatura digital:
   - Verificar autenticidade do certificado
   - Validar cadeia de certificação
   - Verificar se certificado não está revogado
