@@ -14,6 +14,7 @@ import NovoAtestado from "./pages/NovoAtestado";
 import Configuracoes from "./pages/Configuracoes";
 import NovoPedidoExame from "./pages/NovoPedidoExame";
 import Templates from "./pages/Templates";
+import EditarPaciente from "./pages/EditarPaciente";
 
 function Router() {
   // make sure to consider if you need authentication for certain routes
@@ -22,6 +23,7 @@ function Router() {
       <Route path={"/"} component={Dashboard} />
       <Route path="/pacientes" component={Pacientes} />
       <Route path="/pacientes/novo" component={NovoPaciente} />
+      <Route path="/pacientes/:id" component={EditarPaciente} />
       <Route path="/prescricao/nova" component={NovaPrescricao} />
       <Route path="/historico" component={Historico} />
       <Route path="/medicamentos" component={Medicamentos} />

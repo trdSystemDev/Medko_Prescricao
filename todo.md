@@ -274,3 +274,4 @@
 
 ## Bugs Reportados
 - [x] Corrigir erro de criptografia ao cadastrar paciente
+- [x] Criar página de edição de paciente (/pacientes/:id)
