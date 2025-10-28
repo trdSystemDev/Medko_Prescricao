@@ -255,3 +255,18 @@
 
 ## Bugs
 - [x] Corrigir verificação de role nas APIs (aceitar admin e doctor)
+
+## Funcionalidades Faltantes (Para Completar 100%)
+- [x] Implementar formulário de pedidos de exames
+- [x] Implementar API de busca de exames
+- [x] Implementar sistema de templates/modelos:
+  - Salvar prescrição como modelo
+  - Salvar atestado como modelo
+  - Listar e reutilizar modelos
+- [ ] Criar página de acesso do paciente (link seguro)
+- [ ] Criar página de validação pública de documentos (QR Code)
+- [ ] Criar índices de banco de dados para otimização
+- [ ] Implementar validação de CRM do médico
+- [ ] Implementar rate limiting real (não apenas documentado)
+- [ ] Implementar proteção CSRF
+- [ ] Implementar watermark em PDFs

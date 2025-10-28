@@ -1,6 +1,6 @@
-import { eq } from "drizzle-orm";
+import { and, eq, like, or } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users } from "../drizzle/schema";
+import { InsertUser, users, patients, medications, prescriptions, exams, templates } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -90,7 +90,7 @@ export async function getUserByOpenId(openId: string) {
 }
 
 // Pacientes
-import { patients, type InsertPatient, type Patient } from '../drizzle/schema';
+import { type InsertPatient, type Patient } from '../drizzle/schema';
 import { encrypt, decrypt, encryptFields, decryptFields } from './encryption';
 
 // Campos que devem ser criptografados
@@ -220,8 +220,8 @@ export async function deletePatient(patientId: number, doctorId: number): Promis
 }
 
 // Medicamentos
-import { medications, type Medication } from '../drizzle/schema';
-import { like, or, and, sql } from 'drizzle-orm';
+import { type Medication } from '../drizzle/schema';
+import { sql } from 'drizzle-orm';
 
 export async function searchMedications(query: string, filters?: {
   tarja?: string;
@@ -301,7 +301,7 @@ export async function getMedicationByNumeroProcesso(numeroProcesso: string): Pro
 }
 
 // Prescrições
-import { prescriptions, type Prescription, type InsertPrescription } from '../drizzle/schema';
+import { type Prescription, type InsertPrescription } from '../drizzle/schema';
 import { desc } from 'drizzle-orm';
 
 export async function createPrescription(prescriptionData: InsertPrescription): Promise<Prescription> {
@@ -383,4 +383,73 @@ export async function updatePrescription(
   await db.update(prescriptions).set(data).where(eq(prescriptions.id, prescriptionId));
 
   return getPrescriptionById(prescriptionId, doctorId) as Promise<Prescription>;
+}
+
+// Exames
+export async function searchExams(query: string) {
+  const db = await getDb();
+  if (!db) return [];
+
+  return db
+    .select()
+    .from(exams)
+    .where(
+      or(
+        like(exams.nome, `%${query}%`),
+        like(exams.codigoTuss, `%${query}%`),
+        like(exams.codigoSus, `%${query}%`)
+      )
+    )
+    .limit(50);
+}
+
+export async function getExamById(id: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+
+  const result = await db.select().from(exams).where(eq(exams.id, id)).limit(1);
+  return result.length > 0 ? result[0] : undefined;
+}
+
+// Templates
+export async function createTemplate(
+  doctorId: number,
+  tipo: string,
+  nome: string,
+  dados: any
+) {
+  const db = await getDb();
+  if (!db) throw new Error('Database not available');
+
+  const result = await db.insert(templates).values({
+    doctorId,
+    tipo: tipo as any,
+    nome,
+    dados: JSON.stringify(dados),
+  });
+
+  return result;
+}
+
+export async function getTemplatesByDoctor(doctorId: number, tipo?: string) {
+  const db = await getDb();
+  if (!db) return [];
+
+  if (tipo) {
+    return db.select().from(templates).where(
+      and(
+        eq(templates.doctorId, doctorId),
+        eq(templates.tipo, tipo as any)
+      )
+    );
+  }
+
+  return db.select().from(templates).where(eq(templates.doctorId, doctorId));
+}
+
+export async function deleteTemplate(id: number, doctorId: number) {
+  const db = await getDb();
+  if (!db) throw new Error('Database not available');
+
+  await db.delete(templates).where(and(eq(templates.id, id), eq(templates.doctorId, doctorId)));
 }

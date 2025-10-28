@@ -636,6 +636,74 @@ export const appRouter = router({
         return result;
       }),
   }),
+
+  // Rotas de exames
+  exams: router({
+    search: protectedProcedure
+      .input(z.object({ query: z.string().min(2) }))
+      .query(async ({ ctx, input }) => {
+        await logAudit({
+          userId: ctx.user.id,
+          userRole: ctx.user.role,
+          action: 'SEARCH_EXAM' as any,
+          ipAddress: getClientIp(ctx.req),
+          userAgent: getUserAgent(ctx.req),
+          metadata: { query: input.query },
+        });
+
+        return db.searchExams(input.query);
+      }),
+  }),
+
+  // Rotas de templates
+  templates: router({
+    list: protectedProcedure
+      .input(z.object({ tipo: z.string().optional() }))
+      .query(async ({ ctx, input }) => {
+        return db.getTemplatesByDoctor(ctx.user.id, input.tipo);
+      }),
+
+    create: protectedProcedure
+      .input(
+        z.object({
+          tipo: z.enum(['prescricao', 'atestado', 'exame']),
+          nome: z.string(),
+          dados: z.any(),
+        })
+      )
+      .mutation(async ({ ctx, input }) => {
+        await db.createTemplate(ctx.user.id, input.tipo, input.nome, input.dados);
+
+        await logAudit({
+          userId: ctx.user.id,
+          userRole: ctx.user.role,
+          action: 'CREATE_TEMPLATE' as any,
+          ipAddress: getClientIp(ctx.req),
+          userAgent: getUserAgent(ctx.req),
+          metadata: { tipo: input.tipo, nome: input.nome },
+        });
+
+        return { success: true };
+      }),
+
+    delete: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        await db.deleteTemplate(input.id, ctx.user.id);
+
+        await logAudit({
+          userId: ctx.user.id,
+          userRole: ctx.user.role,
+          action: 'DELETE_TEMPLATE' as any,
+          resourceType: 'TEMPLATE' as any,
+          resourceId: input.id,
+          ipAddress: getClientIp(ctx.req),
+          userAgent: getUserAgent(ctx.req),
+        });
+
+        return { success: true };
+      }),
+  }),
 });
 
 export type AppRouter = typeof appRouter;

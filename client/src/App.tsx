@@ -12,6 +12,8 @@ import Historico from "./pages/Historico";
 import Medicamentos from "./pages/Medicamentos";
 import NovoAtestado from "./pages/NovoAtestado";
 import Configuracoes from "./pages/Configuracoes";
+import NovoPedidoExame from "./pages/NovoPedidoExame";
+import Templates from "./pages/Templates";
 
 function Router() {
   // make sure to consider if you need authentication for certain routes
@@ -24,8 +26,10 @@ function Router() {
       <Route path="/historico" component={Historico} />
       <Route path="/medicamentos" component={Medicamentos} />
       <Route path="/atestado/novo" component={NovoAtestado} />
-      <Route path="/configuracoes" component={Configuracoes} />
-      <Route path={"/404"} component={NotFound} />
+       <Route path="/configuracoes" component={Configuracoes} />
+      <Route path="/novo-pedido-exame" component={NovoPedidoExame} />
+      <Route path="/templates" component={Templates} />
+      <Route path="/404" component={NotFound} />
       {/* Final fallback route */}
       <Route component={NotFound} />
     </Switch>
