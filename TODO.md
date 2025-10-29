@@ -107,3 +107,12 @@
   - Implementado handleSendWhatsApp que abre WhatsApp diretamente
   - Botão só aparece após geração do PDF
   - Cor azul para destacar ação
+
+- [x] Verificar por que o logotipo Medko não está aparecendo
+  - Configurado const.ts para usar /logo.png como padrão
+  - Logo Medko agora aparece em toda a aplicação
+- [x] Adicionar botões de Gerar PDF e Enviar WhatsApp no Dashboard (Prescrições Recentes)
+  - Botão "Gerar PDF" quando não tem PDF
+  - Botão "PDF" (download) quando já tem PDF
+  - Botão "WhatsApp" (enviar) quando já tem PDF
+  - Botão "Ver Detalhes" sempre visível

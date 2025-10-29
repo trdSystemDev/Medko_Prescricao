@@ -2,12 +2,28 @@ import DashboardLayout from '@/components/DashboardLayout';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { trpc } from '@/lib/trpc';
-import { FileText, Users, ClipboardList, TrendingUp } from 'lucide-react';
+import { FileText, Users, ClipboardList, TrendingUp, Download, Send } from 'lucide-react';
+import { toast } from 'sonner';
 import { Link } from 'wouter';
 
 export default function Dashboard() {
   const { data: prescriptions, isLoading: loadingPrescriptions } = trpc.prescriptions.list.useQuery();
   const { data: patients, isLoading: loadingPatients } = trpc.patients.list.useQuery();
+
+  const generatePdfMutation = trpc.prescriptions.generatePDF.useMutation({
+    onSuccess: (data) => {
+      toast.success('PDF gerado com sucesso!');
+      window.location.reload();
+    },
+    onError: (error) => {
+      toast.error(`Erro ao gerar PDF: ${error.message}`);
+    },
+  });
+
+  const handleSendWhatsApp = (pdfUrl: string) => {
+    const message = `Olá! Segue a prescrição médica: ${pdfUrl}`;
+    window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
+  };
 
   const stats = [
     {
@@ -148,11 +164,46 @@ export default function Dashboard() {
                         {new Date(prescription.createdAt).toLocaleDateString('pt-BR')}
                       </p>
                     </div>
-                    <Link href={`/prescricao/${prescription.id}`}>
-                      <Button variant="outline" size="sm">
-                        Ver Detalhes
-                      </Button>
-                    </Link>
+                    <div className="flex gap-2">
+                      {!prescription.pdfUrl && (
+                        <Button
+                          size="sm"
+                          variant="outline"
+                          onClick={() => generatePdfMutation.mutate({ prescriptionId: prescription.id })}
+                          disabled={generatePdfMutation.isPending}
+                        >
+                          <FileText className="w-4 h-4 mr-1" />
+                          {generatePdfMutation.isPending ? 'Gerando...' : 'Gerar PDF'}
+                        </Button>
+                      )}
+                      {prescription.pdfUrl && (
+                        <>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            asChild
+                          >
+                            <a href={prescription.pdfUrl} target="_blank" rel="noopener noreferrer">
+                              <Download className="w-4 h-4 mr-1" />
+                              PDF
+                            </a>
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => handleSendWhatsApp(prescription.pdfUrl!)}
+                          >
+                            <Send className="w-4 h-4 mr-1" />
+                            WhatsApp
+                          </Button>
+                        </>
+                      )}
+                      <Link href={`/prescricao/${prescription.id}`}>
+                        <Button variant="outline" size="sm">
+                          Ver Detalhes
+                        </Button>
+                      </Link>
+                    </div>
                   </div>
                 ))}
               </div>
