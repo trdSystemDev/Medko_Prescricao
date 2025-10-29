@@ -11,7 +11,7 @@ import {
   getDataValidade,
   type TipoReceituario,
 } from "./prescription-validator";
-import { generatePrescriptionPDF, generateQRCodeData, type PrescriptionPDFData } from "./pdf-generator";
+import { generatePrescriptionPDF, generateCertificatePDF, generateQRCodeData, type PrescriptionPDFData, type CertificatePDFData } from "./pdf-generator";
 import { signDocument, getCertificateInfo } from "./digital-signature";
 import { storagePut } from "./storage";
 import { sendPrescription } from "./zenvia";
@@ -720,6 +720,86 @@ export const appRouter = router({
         });
 
         return { id: certificateId, success: true };
+      }),
+
+    generatePDF: protectedProcedure
+      .input(z.object({ certificateId: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== 'doctor' && ctx.user.role !== 'admin') {
+          throw new TRPCError({ code: 'FORBIDDEN', message: 'Only doctors can generate PDFs' });
+        }
+
+        const database = await getDb();
+        if (!database) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
+
+        // Buscar atestado
+        const [certificate] = await database.select().from(certificates).where(eq(certificates.id, input.certificateId)).limit(1);
+        if (!certificate) {
+          throw new TRPCError({ code: 'NOT_FOUND', message: 'Certificate not found' });
+        }
+
+        // Verificar se o atestado pertence ao médico
+        if (certificate.doctorId !== ctx.user.id) {
+          throw new TRPCError({ code: 'FORBIDDEN', message: 'You can only generate PDFs for your own certificates' });
+        }
+
+        // Dados do médico vem do ctx.user
+
+        // Buscar dados do paciente
+        const patient = await db.getPatientById(certificate.patientId, ctx.user.id);
+        if (!patient) {
+          throw new TRPCError({ code: 'NOT_FOUND', message: 'Patient not found' });
+        }
+
+        // Preparar dados para o PDF
+        const pdfData: CertificatePDFData = {
+          certificate: {
+            id: certificate.id,
+            tipo: certificate.tipo as 'comparecimento' | 'afastamento' | 'obito',
+            cid: certificate.cid,
+            dataInicio: certificate.dataInicio,
+            dataFim: certificate.dataFim,
+            observacoes: certificate.observacoes,
+            createdAt: certificate.createdAt,
+          },
+          doctor: {
+            name: ctx.user.name || 'Médico',
+            crm: ctx.user.crm || '',
+            crmUf: ctx.user.crmUf || '',
+            especialidade: ctx.user.especialidade || undefined,
+            endereco: ctx.user.endereco || undefined,
+            telefone: ctx.user.telefone || undefined,
+          },
+          patient: {
+            nomeCompleto: patient.nomeCompleto,
+            dataNascimento: patient.dataNascimento ? new Date(patient.dataNascimento).toLocaleDateString('pt-BR') : undefined,
+            cpf: patient.cpf || undefined,
+          },
+        };
+
+        // Gerar PDF
+        const pdfBuffer = await generateCertificatePDF(pdfData);
+
+        // Upload para S3
+        const s3Key = `certificates/${certificate.id}_${Date.now()}.pdf`;
+        const { url: pdfUrl } = await storagePut(s3Key, pdfBuffer, 'application/pdf');
+
+        // Atualizar atestado com URL do PDF
+        await database.update(certificates)
+          .set({ pdfUrl })
+          .where(eq(certificates.id, input.certificateId));
+
+        await logAudit({
+          userId: ctx.user.id,
+          userRole: ctx.user.role,
+          action: 'GENERATE_PDF',
+          resourceType: 'certificate',
+          resourceId: input.certificateId,
+          ipAddress: getClientIp(ctx.req),
+          userAgent: getUserAgent(ctx.req),
+        });
+
+        return { pdfUrl, success: true };
       }),
   }),
 

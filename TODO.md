@@ -88,3 +88,16 @@
   - Seção de Atestados adicionada na página Histórico
   - Mostra ID, Data, Tipo, Status e Ações
   - Botões de Visualizar e Download PDF
+
+- [x] Implementar geração de PDF para atestados
+  - Função generateCertificatePDF criada em pdf-generator.ts
+  - API certificates.generatePDF implementada
+  - Upload automático para S3
+  - Auditoria de geração de PDF
+- [x] Implementar envio de atestados via WhatsApp
+  - Botão de envio via WhatsApp com link do PDF
+- [x] Adicionar botões Gerar PDF e Enviar WhatsApp na página de visualização de atestados
+  - Botão "Gerar PDF" (vermelho) - aparece quando não há PDF
+  - Botão "Baixar PDF" - aparece após geração
+  - Botão "Enviar via WhatsApp" (azul) - aparece após geração
+  - Botão "Imprimir" - sempre visível

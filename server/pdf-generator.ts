@@ -266,3 +266,206 @@ export function addWatermark(doc: typeof PDFDocument, text: string) {
     });
   doc.restore();
 }
+
+export interface CertificatePDFData {
+  certificate: {
+    id: number;
+    tipo: 'comparecimento' | 'afastamento' | 'obito';
+    cid?: string | null;
+    dataInicio?: Date | null;
+    dataFim?: Date | null;
+    observacoes?: string | null;
+    createdAt: Date;
+  };
+  doctor: {
+    name: string;
+    crm: string;
+    crmUf: string;
+    especialidade?: string;
+    endereco?: string;
+    telefone?: string;
+  };
+  patient: {
+    nomeCompleto: string;
+    dataNascimento?: string;
+    cpf?: string;
+  };
+}
+
+/**
+ * Gera PDF de atestado médico
+ */
+export async function generateCertificatePDF(data: CertificatePDFData): Promise<Buffer> {
+  return new Promise((resolve, reject) => {
+    try {
+      const doc = new PDFDocument({
+        size: 'A4',
+        margins: { top: 50, bottom: 50, left: 50, right: 50 },
+      });
+
+      const buffers: Buffer[] = [];
+      doc.on('data', buffers.push.bind(buffers));
+      doc.on('end', () => {
+        const pdfBuffer = Buffer.concat(buffers);
+        resolve(pdfBuffer);
+      });
+      doc.on('error', reject);
+
+      // Cabeçalho
+      doc
+        .fontSize(20)
+        .font('Helvetica-Bold')
+        .text('ATESTADO MÉDICO', { align: 'center' });
+
+      doc.moveDown(0.5);
+      doc
+        .fontSize(10)
+        .font('Helvetica')
+        .text(`Atestado Nº ${data.certificate.id}`, { align: 'center' });
+
+      doc.moveDown(2);
+
+      // Dados do médico
+      doc
+        .fontSize(12)
+        .font('Helvetica-Bold')
+        .text(data.doctor.name);
+
+      doc
+        .fontSize(10)
+        .font('Helvetica')
+        .text(`CRM: ${data.doctor.crm}/${data.doctor.crmUf}`);
+
+      if (data.doctor.especialidade) {
+        doc.text(`Especialidade: ${data.doctor.especialidade}`);
+      }
+
+      if (data.doctor.endereco) {
+        doc.text(`Endereço: ${data.doctor.endereco}`);
+      }
+
+      if (data.doctor.telefone) {
+        doc.text(`Telefone: ${data.doctor.telefone}`);
+      }
+
+      doc.moveDown(2);
+
+      // Corpo do atestado
+      const tipoTexto = {
+        comparecimento: 'ATESTO PARA OS DEVIDOS FINS QUE',
+        afastamento: 'ATESTO PARA OS DEVIDOS FINS QUE',
+        obito: 'ATESTO PARA OS DEVIDOS FINS O ÓBITO DE',
+      };
+
+      doc
+        .fontSize(11)
+        .font('Helvetica')
+        .text(tipoTexto[data.certificate.tipo], { align: 'justify' });
+
+      doc.moveDown(0.5);
+
+      // Dados do paciente
+      doc
+        .fontSize(11)
+        .font('Helvetica-Bold')
+        .text(data.patient.nomeCompleto, { continued: true })
+        .font('Helvetica')
+        .text(data.patient.cpf ? `, CPF ${data.patient.cpf}` : '', { continued: true });
+
+      if (data.patient.dataNascimento) {
+        doc.text(`, nascido(a) em ${data.patient.dataNascimento}`);
+      } else {
+        doc.text('');
+      }
+
+      doc.moveDown(1);
+
+      // Texto específico por tipo
+      if (data.certificate.tipo === 'comparecimento') {
+        doc
+          .fontSize(11)
+          .font('Helvetica')
+          .text('compareceu a esta consulta médica na data de hoje.', { align: 'justify' });
+      } else if (data.certificate.tipo === 'afastamento') {
+        if (data.certificate.dataInicio && data.certificate.dataFim) {
+          const diasAfastamento = Math.ceil(
+            (new Date(data.certificate.dataFim).getTime() - new Date(data.certificate.dataInicio).getTime()) /
+              (1000 * 60 * 60 * 24)
+          );
+
+          doc
+            .fontSize(11)
+            .font('Helvetica')
+            .text(
+              `necessita de afastamento de suas atividades habituais pelo período de ${diasAfastamento} dia(s), ` +
+                `de ${new Date(data.certificate.dataInicio).toLocaleDateString('pt-BR')} ` +
+                `a ${new Date(data.certificate.dataFim).toLocaleDateString('pt-BR')}.`,
+              { align: 'justify' }
+            );
+        } else {
+          doc
+            .fontSize(11)
+            .font('Helvetica')
+            .text('necessita de afastamento de suas atividades habituais.', { align: 'justify' });
+        }
+      } else if (data.certificate.tipo === 'obito') {
+        doc
+          .fontSize(11)
+          .font('Helvetica')
+          .text(
+            `ocorrido em ${new Date(data.certificate.createdAt).toLocaleDateString('pt-BR')}.`,
+            { align: 'justify' }
+          );
+      }
+
+      doc.moveDown(1);
+
+      // CID (se houver)
+      if (data.certificate.cid) {
+        doc
+          .fontSize(10)
+          .font('Helvetica')
+          .text(`CID: ${data.certificate.cid}`);
+        doc.moveDown(0.5);
+      }
+
+      // Observações (se houver)
+      if (data.certificate.observacoes) {
+        doc.moveDown(1);
+        doc
+          .fontSize(10)
+          .font('Helvetica-Bold')
+          .text('OBSERVAÇÕES:');
+
+        doc
+          .fontSize(10)
+          .font('Helvetica')
+          .text(data.certificate.observacoes, { align: 'justify' });
+      }
+
+      // Data de emissão
+      doc.moveDown(2);
+      doc
+        .fontSize(10)
+        .font('Helvetica')
+        .text(
+          `Emitido em ${new Date(data.certificate.createdAt).toLocaleDateString('pt-BR')}`,
+          { align: 'center' }
+        );
+
+      // Assinatura
+      doc.moveDown(3);
+      doc
+        .fontSize(10)
+        .font('Helvetica')
+        .text('_'.repeat(50), { align: 'center' });
+      doc.text(`${data.doctor.name}`, { align: 'center' });
+      doc.text(`CRM: ${data.doctor.crm}/${data.doctor.crmUf}`, { align: 'center' });
+
+      // Finalizar documento
+      doc.end();
+    } catch (error) {
+      reject(error);
+    }
+  });
+}

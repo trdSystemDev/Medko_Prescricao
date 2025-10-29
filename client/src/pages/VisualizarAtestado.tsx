@@ -15,6 +15,30 @@ export default function VisualizarAtestado() {
     { enabled: !!id }
   );
 
+  const generatePDFMutation = trpc.certificates.generatePDF.useMutation({
+    onSuccess: (data) => {
+      toast.success('PDF gerado com sucesso!');
+      window.location.reload();
+    },
+    onError: (error) => {
+      toast.error('Erro ao gerar PDF: ' + error.message);
+    },
+  });
+
+  const handleGeneratePDF = () => {
+    if (!id) return;
+    generatePDFMutation.mutate({ certificateId: parseInt(id) });
+  };
+
+  const handleSendWhatsApp = () => {
+    if (!certificate?.pdfUrl) {
+      toast.error('Gere o PDF primeiro antes de enviar');
+      return;
+    }
+    const message = `Olá! Segue o atestado médico: ${certificate.pdfUrl}`;
+    window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
+  };
+
   const handlePrint = () => {
     window.print();
   };
@@ -61,13 +85,34 @@ export default function VisualizarAtestado() {
           </div>
           
           <div className="flex gap-2">
-            {certificate.pdfUrl && (
-              <Button variant="outline" asChild>
-                <a href={certificate.pdfUrl} target="_blank" rel="noopener noreferrer">
-                  <Download className="w-4 h-4 mr-2" />
-                  Baixar PDF
-                </a>
+            {!certificate.pdfUrl && (
+              <Button 
+                onClick={handleGeneratePDF}
+                disabled={generatePDFMutation.isPending}
+                className="bg-red-600 hover:bg-red-700"
+              >
+                <FileText className="w-4 h-4 mr-2" />
+                {generatePDFMutation.isPending ? 'Gerando...' : 'Gerar PDF'}
               </Button>
+            )}
+
+            {certificate.pdfUrl && (
+              <>
+                <Button variant="outline" asChild>
+                  <a href={certificate.pdfUrl} target="_blank" rel="noopener noreferrer">
+                    <Download className="w-4 h-4 mr-2" />
+                    Baixar PDF
+                  </a>
+                </Button>
+
+                <Button 
+                  onClick={handleSendWhatsApp}
+                  className="bg-blue-600 hover:bg-blue-700"
+                >
+                  <Send className="w-4 h-4 mr-2" />
+                  Enviar via WhatsApp
+                </Button>
+              </>
             )}
             
             <Button variant="outline" onClick={handlePrint}>
