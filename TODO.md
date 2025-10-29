@@ -101,3 +101,9 @@
   - Botão "Baixar PDF" - aparece após geração
   - Botão "Enviar via WhatsApp" (azul) - aparece após geração
   - Botão "Imprimir" - sempre visível
+
+- [x] Corrigir botão "Enviar via WhatsApp" da prescrição - agora funciona igual ao do atestado
+  - Removida chamada à API prescriptions.send que não existia
+  - Implementado handleSendWhatsApp que abre WhatsApp diretamente
+  - Botão só aparece após geração do PDF
+  - Cor azul para destacar ação

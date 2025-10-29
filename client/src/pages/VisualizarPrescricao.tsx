@@ -27,14 +27,14 @@ export default function VisualizarPrescricao() {
     },
   });
 
-  const sendMutation = trpc.prescriptions.send.useMutation({
-    onSuccess: () => {
-      toast.success("Prescrição enviada com sucesso!");
-    },
-    onError: (error) => {
-      toast.error(`Erro ao enviar: ${error.message}`);
-    },
-  });
+  const handleSendWhatsApp = () => {
+    if (!prescription?.pdfUrl) {
+      toast.error('Gere o PDF primeiro antes de enviar');
+      return;
+    }
+    const message = `Olá! Segue a prescrição médica: ${prescription.pdfUrl}`;
+    window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
+  };
 
   const handlePrint = () => {
     window.print();
@@ -107,16 +107,15 @@ export default function VisualizarPrescricao() {
               Imprimir
             </Button>
             
-            <Button
-              onClick={() => sendMutation.mutate({
-                prescriptionId: prescription.id,
-                channel: 'whatsapp'
-              })}
-              disabled={sendMutation.isPending}
-            >
-              <Send className="w-4 h-4 mr-2" />
-              Enviar via WhatsApp
-            </Button>
+            {prescription.pdfUrl && (
+              <Button
+                onClick={handleSendWhatsApp}
+                className="bg-blue-600 hover:bg-blue-700"
+              >
+                <Send className="w-4 h-4 mr-2" />
+                Enviar via WhatsApp
+              </Button>
+            )}
           </div>
         </div>
 
