@@ -863,6 +863,49 @@ export const appRouter = router({
         return { success: true };
       }),
   }),
+
+  // Rotas de usuário/médico
+  user: router({
+    updateProfile: protectedProcedure
+      .input(
+        z.object({
+          name: z.string().optional(),
+          email: z.string().email().optional(),
+          crm: z.string().optional(),
+          crmUf: z.string().max(2).optional(),
+          especialidade: z.string().optional(),
+          rqe: z.string().optional(),
+          endereco: z.string().optional(),
+          telefone: z.string().optional(),
+        })
+      )
+      .mutation(async ({ ctx, input }) => {
+        const database = await getDb();
+        const { users } = await import('../drizzle/schema');
+        
+        // Atualizar dados do usuário
+        await database!
+          .update(users)
+          .set({
+            ...input,
+            updatedAt: new Date(),
+          })
+          .where(eq(users.id, ctx.user.id));
+
+        await logAudit({
+          userId: ctx.user.id,
+          userRole: ctx.user.role,
+          action: 'UPDATE_PROFILE' as any,
+          resourceType: 'USER' as any,
+          resourceId: ctx.user.id,
+          ipAddress: getClientIp(ctx.req),
+          userAgent: getUserAgent(ctx.req),
+          metadata: { fields: Object.keys(input) },
+        });
+
+        return { success: true };
+      }),
+  }),
 });
 
 export type AppRouter = typeof appRouter;

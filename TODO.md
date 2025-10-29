@@ -150,3 +150,9 @@
   - Centralizado no topo da sidebar
   - Removido texto do título
   - Header com altura de 96px
+
+- [x] Configurações não está salvando alterações do cadastro (CRM e outros campos)
+  - API user.updateProfile implementada no backend
+  - Página Configuracoes.tsx integrada com a API
+  - Validação de campos e auditoria
+  - Recarregamento automático após salvar
