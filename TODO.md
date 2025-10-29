@@ -144,3 +144,9 @@
   - Cards de estatísticas com cores Medko
   - Botões de ações rápidas com cores Medko
   - Tema CSS atualizado com variáveis Medko
+
+- [x] Ajustar header da sidebar - logo maior e centralizado sem texto
+  - Logo aumentado para 64px de altura
+  - Centralizado no topo da sidebar
+  - Removido texto do título
+  - Header com altura de 96px

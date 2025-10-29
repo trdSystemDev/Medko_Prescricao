@@ -173,41 +173,30 @@ function DashboardLayoutContent({
           className="border-r-0 bg-[#2C3E50] text-white"
           disableTransition={isResizing}
         >
-          <SidebarHeader className="h-16 justify-center">
-            <div className="flex items-center gap-3 pl-2 group-data-[collapsible=icon]:px-0 transition-all w-full">
+          <SidebarHeader className="h-24 justify-center py-6">
+            <div className="flex items-center justify-center w-full">
               {isCollapsed ? (
-                <div className="relative h-8 w-8 shrink-0 group">
+                <div className="relative h-10 w-10 shrink-0 group">
                   <img
                     src={APP_LOGO}
-                    className="h-8 w-8 rounded-md object-cover ring-1 ring-border"
-                    alt="Logo"
+                    className="h-10 w-10 object-contain"
+                    alt="Logo Medko"
                   />
                   <button
                     onClick={toggleSidebar}
-                    className="absolute inset-0 flex items-center justify-center bg-accent rounded-md ring-1 ring-border opacity-0 group-hover:opacity-100 transition-opacity focus:outline-none focus-visible:ring-2 focus-visible:ring-ring"
+                    className="absolute inset-0 flex items-center justify-center bg-[#F39C12]/20 rounded-md opacity-0 group-hover:opacity-100 transition-opacity focus:outline-none focus-visible:ring-2 focus-visible:ring-[#F39C12]"
                   >
-                    <PanelLeft className="h-4 w-4 text-foreground" />
+                    <PanelLeft className="h-4 w-4 text-white" />
                   </button>
                 </div>
               ) : (
-                <>
-                  <div className="flex items-center gap-3 min-w-0">
-                    <img
-                      src={APP_LOGO}
-                      className="h-8 w-8 rounded-md object-cover ring-1 ring-border shrink-0"
-                      alt="Logo"
-                    />
-                    <span className="font-semibold tracking-tight truncate">
-                      {APP_TITLE}
-                    </span>
-                  </div>
-                  <button
-                    onClick={toggleSidebar}
-                    className="ml-auto h-8 w-8 flex items-center justify-center hover:bg-[#F39C12] rounded-lg transition-colors focus:outline-none focus-visible:ring-2 focus-visible:ring-[#F39C12] shrink-0"
-                  >
-                    <PanelLeft className="h-4 w-4 text-white/70" />
-                  </button>
-                </>
+                <div className="flex flex-col items-center gap-2 w-full">
+                  <img
+                    src={APP_LOGO}
+                    className="h-16 w-auto object-contain"
+                    alt="Logo Medko"
+                  />
+                </div>
               )}
             </div>
           </SidebarHeader>
