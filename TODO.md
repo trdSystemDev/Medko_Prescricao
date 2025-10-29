@@ -82,3 +82,9 @@
   - Validação de campos e auditoria implementadas
 
 - [x] Melhorar descrição dos cards de estatísticas no dashboard
+
+- [x] Atestados não aparecem na página de Histórico - listagem implementada
+  - API certificates.list adicionada
+  - Seção de Atestados adicionada na página Histórico
+  - Mostra ID, Data, Tipo, Status e Ações
+  - Botões de Visualizar e Download PDF

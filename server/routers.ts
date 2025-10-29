@@ -661,6 +661,14 @@ export const appRouter = router({
 
   // Rotas de atestados
   certificates: router({
+    list: protectedProcedure
+      .query(async ({ ctx }) => {
+        const db = await getDb();
+        if (!db) throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Database not available' });
+        
+        return db.select().from(certificates).where(eq(certificates.doctorId, ctx.user.id)).orderBy(certificates.createdAt);
+      }),
+
     getById: protectedProcedure
       .input(z.object({ id: z.number() }))
       .query(async ({ input, ctx }) => {

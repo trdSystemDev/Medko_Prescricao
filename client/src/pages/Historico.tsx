@@ -20,9 +20,14 @@ export default function Historico() {
   const [searchTerm, setSearchTerm] = useState('');
   const [, setLocation] = useLocation();
   const { data: prescriptions, isLoading } = trpc.prescriptions.list.useQuery();
+  const { data: certificates, isLoading: loadingCertificates } = trpc.certificates.list.useQuery();
 
   const filteredPrescriptions = prescriptions?.filter((p) =>
     p.id.toString().includes(searchTerm)
+  );
+
+  const filteredCertificates = certificates?.filter((c: any) =>
+    c.id.toString().includes(searchTerm)
   );
 
   const getTipoLabel = (tipo: string) => {
@@ -147,6 +152,72 @@ export default function Historico() {
                   {searchTerm
                     ? 'Nenhuma prescrição encontrada'
                     : 'Nenhuma prescrição emitida ainda'}
+                </p>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Certificates Table */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Atestados</CardTitle>
+          </CardHeader>
+          <CardContent>
+            {loadingCertificates ? (
+              <p className="text-center py-8 text-gray-500">Carregando...</p>
+            ) : filteredCertificates && filteredCertificates.length > 0 ? (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>ID</TableHead>
+                    <TableHead>Data</TableHead>
+                    <TableHead>Tipo</TableHead>
+                    <TableHead>Status</TableHead>
+                    <TableHead className="text-right">Ações</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredCertificates.map((certificate: any) => (
+                    <TableRow key={certificate.id}>
+                      <TableCell className="font-medium">#{certificate.id}</TableCell>
+                      <TableCell>
+                        {new Date(certificate.createdAt).toLocaleDateString('pt-BR')}
+                      </TableCell>
+                      <TableCell>
+                        {certificate.tipo === 'comparecimento' && 'Comparecimento'}
+                        {certificate.tipo === 'afastamento' && 'Afastamento'}
+                        {certificate.tipo === 'obito' && 'Óbito'}
+                      </TableCell>
+                      <TableCell>{getStatusBadge('assinada')}</TableCell>
+                      <TableCell className="text-right">
+                        <div className="flex justify-end gap-2">
+                          <Button 
+                            variant="outline" 
+                            size="sm" 
+                            title="Visualizar"
+                            onClick={() => setLocation(`/atestados/${certificate.id}`)}
+                          >
+                            <Eye className="h-4 w-4" />
+                          </Button>
+                          {certificate.pdfUrl && (
+                            <Button variant="outline" size="sm" title="Download PDF">
+                              <Download className="h-4 w-4" />
+                            </Button>
+                          )}
+                        </div>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            ) : (
+              <div className="text-center py-12">
+                <FileText className="h-12 w-12 text-gray-400 mx-auto mb-3" />
+                <p className="text-gray-600 mb-4">
+                  {searchTerm
+                    ? 'Nenhum atestado encontrado'
+                    : 'Nenhum atestado emitido ainda'}
                 </p>
               </div>
             )}
