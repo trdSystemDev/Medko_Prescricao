@@ -137,3 +137,10 @@
   - Forçado uso do logo local /logo.png
   - Ignorando variável de ambiente VITE_APP_LOGO
   - Logo Medko agora aparece sempre
+
+- [x] Modernizar layout usando cores do logotipo Medko (azul escuro e laranja) em todo o sistema
+  - Sidebar azul escuro (#2C3E50) com texto branco
+  - Hover laranja (#F39C12) nos itens do menu
+  - Cards de estatísticas com cores Medko
+  - Botões de ações rápidas com cores Medko
+  - Tema CSS atualizado com variáveis Medko
