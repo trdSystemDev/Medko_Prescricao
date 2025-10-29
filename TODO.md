@@ -132,3 +132,8 @@
   - Botão WhatsApp: abre WhatsApp com link do PDF
   - Corrigido tanto para prescrições quanto para atestados
   - Removido toast "Funcionalidade em desenvolvimento"
+
+- [x] Trocar logotipo da página inicial para o logo Medko que foi enviado
+  - Forçado uso do logo local /logo.png
+  - Ignorando variável de ambiente VITE_APP_LOGO
+  - Logo Medko agora aparece sempre
