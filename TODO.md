@@ -116,3 +116,13 @@
   - Botão "PDF" (download) quando já tem PDF
   - Botão "WhatsApp" (enviar) quando já tem PDF
   - Botão "Ver Detalhes" sempre visível
+
+- [x] Contabilizar atestados no card de estatísticas do Dashboard
+  - Busca de atestados via trpc.certificates.list.useQuery()
+  - Card mostra quantidade correta de atestados
+- [x] Adicionar seção "Atestados Recentes" no Dashboard
+  - Seção completa com últimos 5 atestados
+  - Mostra ID, data e tipo de atestado
+  - Botões PDF e WhatsApp (quando tem PDF)
+  - Botão "Ver Detalhes" sempre visível
+  - Mensagem quando não há atestados

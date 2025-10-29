@@ -9,6 +9,7 @@ import { Link } from 'wouter';
 export default function Dashboard() {
   const { data: prescriptions, isLoading: loadingPrescriptions } = trpc.prescriptions.list.useQuery();
   const { data: patients, isLoading: loadingPatients } = trpc.patients.list.useQuery();
+  const { data: certificates, isLoading: loadingCertificates } = trpc.certificates.list.useQuery();
 
   const generatePdfMutation = trpc.prescriptions.generatePDF.useMutation({
     onSuccess: (data) => {
@@ -44,7 +45,7 @@ export default function Dashboard() {
     },
     {
       title: 'Atestados este Mês',
-      value: 0,
+      value: certificates?.length || 0,
       description: 'Atestados médicos emitidos',
       icon: ClipboardList,
       color: 'text-orange-600',
@@ -213,6 +214,75 @@ export default function Dashboard() {
                 <p className="text-gray-600">Nenhuma prescrição encontrada</p>
                 <Link href="/prescricao/nova">
                   <Button className="mt-4">Criar Primeira Prescrição</Button>
+                </Link>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
+        {/* Recent Certificates */}
+        <Card>
+          <CardHeader>
+            <CardTitle>Atestados Recentes</CardTitle>
+            <CardDescription>Últimos atestados emitidos</CardDescription>
+          </CardHeader>
+          <CardContent>
+            {loadingCertificates ? (
+              <p className="text-gray-500">Carregando...</p>
+            ) : certificates && certificates.length > 0 ? (
+              <div className="space-y-4">
+                {certificates.slice(0, 5).map((certificate) => (
+                  <div
+                    key={certificate.id}
+                    className="flex items-center justify-between p-4 border rounded-lg hover:bg-gray-50"
+                  >
+                    <div>
+                      <p className="font-medium">Atestado #{certificate.id}</p>
+                      <p className="text-sm text-gray-600">
+                        {new Date(certificate.createdAt).toLocaleDateString('pt-BR')} - {certificate.tipo}
+                      </p>
+                    </div>
+                    <div className="flex gap-2">
+                      {certificate.pdfUrl && (
+                        <>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            asChild
+                          >
+                            <a href={certificate.pdfUrl} target="_blank" rel="noopener noreferrer">
+                              <Download className="w-4 h-4 mr-1" />
+                              PDF
+                            </a>
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="outline"
+                            onClick={() => {
+                              const message = `Olá! Segue o atestado médico: ${certificate.pdfUrl}`;
+                              window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
+                            }}
+                          >
+                            <Send className="w-4 h-4 mr-1" />
+                            WhatsApp
+                          </Button>
+                        </>
+                      )}
+                      <Link href={`/atestados/${certificate.id}`}>
+                        <Button variant="outline" size="sm">
+                          Ver Detalhes
+                        </Button>
+                      </Link>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div className="text-center py-8">
+                <ClipboardList className="h-12 w-12 text-gray-400 mx-auto mb-3" />
+                <p className="text-gray-600">Nenhum atestado encontrado</p>
+                <Link href="/atestado/novo">
+                  <Button className="mt-4">Criar Primeiro Atestado</Button>
                 </Link>
               </div>
             )}
