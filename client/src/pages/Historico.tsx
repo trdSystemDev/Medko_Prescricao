@@ -125,16 +125,26 @@ export default function Historico() {
                             <Eye className="h-4 w-4" />
                           </Button>
                           {prescription.pdfUrl && (
-                            <Button variant="outline" size="sm" title="Download PDF">
-                              <Download className="h-4 w-4" />
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              title="Download PDF"
+                              asChild
+                            >
+                              <a href={prescription.pdfUrl} target="_blank" rel="noopener noreferrer">
+                                <Download className="h-4 w-4" />
+                              </a>
                             </Button>
                           )}
                           {prescription.pdfUrl && (
                             <Button
                               variant="outline"
                               size="sm"
-                              title="Enviar"
-                              onClick={() => toast.info('Funcionalidade em desenvolvimento')}
+                              title="Enviar via WhatsApp"
+                              onClick={() => {
+                                const message = `Olá! Segue a prescrição médica: ${prescription.pdfUrl}`;
+                                window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
+                              }}
                             >
                               <Send className="h-4 w-4" />
                             </Button>
@@ -201,8 +211,28 @@ export default function Historico() {
                             <Eye className="h-4 w-4" />
                           </Button>
                           {certificate.pdfUrl && (
-                            <Button variant="outline" size="sm" title="Download PDF">
-                              <Download className="h-4 w-4" />
+                            <Button 
+                              variant="outline" 
+                              size="sm" 
+                              title="Download PDF"
+                              asChild
+                            >
+                              <a href={certificate.pdfUrl} target="_blank" rel="noopener noreferrer">
+                                <Download className="h-4 w-4" />
+                              </a>
+                            </Button>
+                          )}
+                          {certificate.pdfUrl && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              title="Enviar via WhatsApp"
+                              onClick={() => {
+                                const message = `Olá! Segue o atestado médico: ${certificate.pdfUrl}`;
+                                window.open(`https://wa.me/?text=${encodeURIComponent(message)}`, '_blank');
+                              }}
+                            >
+                              <Send className="h-4 w-4" />
                             </Button>
                           )}
                         </div>

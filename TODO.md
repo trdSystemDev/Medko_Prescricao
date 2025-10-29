@@ -126,3 +126,9 @@
   - Botões PDF e WhatsApp (quando tem PDF)
   - Botão "Ver Detalhes" sempre visível
   - Mensagem quando não há atestados
+
+- [x] Corrigir botões de baixar PDF e enviar WhatsApp na página de Histórico - agora funcionando
+  - Botão Download: abre PDF em nova aba
+  - Botão WhatsApp: abre WhatsApp com link do PDF
+  - Corrigido tanto para prescrições quanto para atestados
+  - Removido toast "Funcionalidade em desenvolvimento"
