@@ -13,6 +13,7 @@ export default function Dashboard() {
     {
       title: 'Total de Pacientes',
       value: patients?.length || 0,
+      description: 'Pacientes cadastrados',
       icon: Users,
       color: 'text-blue-600',
       bgColor: 'bg-blue-50',
@@ -20,6 +21,7 @@ export default function Dashboard() {
     {
       title: 'Prescrições este Mês',
       value: prescriptions?.length || 0,
+      description: 'Últimas prescrições emitidas',
       icon: FileText,
       color: 'text-green-600',
       bgColor: 'bg-green-50',
@@ -27,6 +29,7 @@ export default function Dashboard() {
     {
       title: 'Atestados este Mês',
       value: 0,
+      description: 'Atestados médicos emitidos',
       icon: ClipboardList,
       color: 'text-orange-600',
       bgColor: 'bg-orange-50',
@@ -34,6 +37,7 @@ export default function Dashboard() {
     {
       title: 'Crescimento',
       value: '+12%',
+      description: 'Comparação com mês anterior',
       icon: TrendingUp,
       color: 'text-purple-600',
       bgColor: 'bg-purple-50',

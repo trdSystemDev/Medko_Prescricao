@@ -80,3 +80,5 @@
   - API certificates.create adicionada ao backend
   - Página NovoAtestado.tsx integrada com a API
   - Validação de campos e auditoria implementadas
+
+- [x] Melhorar descrição dos cards de estatísticas no dashboard
