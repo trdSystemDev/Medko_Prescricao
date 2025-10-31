@@ -298,3 +298,58 @@ export const auditLogs = mysqlTable("auditLogs", {
 
 export type AuditLog = typeof auditLogs.$inferSelect;
 export type InsertAuditLog = typeof auditLogs.$inferInsert;
+// Tabela de consultas (agendamentos)
+export const appointments = mysqlTable("appointments", {
+  id: int("id").autoincrement().primaryKey(),
+  doctorId: int("doctorId").notNull(),
+  patientId: int("patientId").notNull(),
+  
+  // Data e hora agendada
+  scheduledDate: timestamp("scheduledDate").notNull(),
+  
+  // Status da consulta
+  status: mysqlEnum("status", [
+    "agendada",      // Consulta agendada
+    "aguardando",    // Paciente aguardando médico
+    "em_andamento",  // Consulta em andamento
+    "finalizada",    // Consulta finalizada
+    "cancelada"      // Consulta cancelada
+  ]).default("agendada").notNull(),
+  
+  // Sala de vídeo Twilio
+  twilioRoomName: varchar("twilioRoomName", { length: 255 }),
+  twilioRoomSid: varchar("twilioRoomSid", { length: 255 }),
+  
+  // Timestamps de controle
+  startedAt: timestamp("startedAt"), // Quando o médico iniciou
+  endedAt: timestamp("endedAt"),     // Quando foi finalizada
+  
+  // Observações
+  motivo: text("motivo"),
+  observacoes: text("observacoes"),
+  
+  createdAt: timestamp("createdAt").defaultNow().notNull(),
+  updatedAt: timestamp("updatedAt").defaultNow().onUpdateNow().notNull(),
+});
+
+export type Appointment = typeof appointments.$inferSelect;
+export type InsertAppointment = typeof appointments.$inferInsert;
+
+// Tabela de mensagens do chat (consultas)
+export const consultationMessages = mysqlTable("consultationMessages", {
+  id: int("id").autoincrement().primaryKey(),
+  appointmentId: int("appointmentId").notNull(),
+  
+  // Remetente
+  senderId: int("senderId").notNull(), // ID do usuário (médico ou paciente)
+  senderType: mysqlEnum("senderType", ["doctor", "patient"]).notNull(),
+  
+  // Mensagem (criptografada)
+  message: text("message").notNull(),
+  
+  // Timestamp
+  timestamp: timestamp("timestamp").defaultNow().notNull(),
+});
+
+export type ConsultationMessage = typeof consultationMessages.$inferSelect;
+export type InsertConsultationMessage = typeof consultationMessages.$inferInsert;

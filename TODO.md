@@ -156,3 +156,61 @@
   - Página Configuracoes.tsx integrada com a API
   - Validação de campos e auditoria
   - Recarregamento automático após salvar
+
+## 🎥 Sistema de Teleconsulta (Nova Funcionalidade)
+
+### Backend
+- [x] Criar tabela `appointments` (consultas agendadas)
+  - id, doctorId, patientId, scheduledDate, status, twilioRoomName, createdAt, updatedAt
+- [x] Criar tabela `consultationMessages` (chat das consultas)
+  - id, appointmentId, senderId, senderType (doctor/patient), message, timestamp
+- [x] Implementar API `appointments.list` (listar consultas do dia)
+- [x] Implementar API `appointments.create` (criar nova consulta)
+- [x] Implementar API `appointments.start` (iniciar consulta - cria sala Twilio)
+- [x] Implementar API `appointments.join` (paciente entrar na consulta)
+- [x] Implementar API `appointments.end` (finalizar consulta)
+- [x] Implementar API `twilio.generateToken` (gerar token de acesso)
+- [x] Implementar API `twilio.createRoom` (criar sala de vídeo)
+- [x] Implementar API `consultationChat.sendMessage` (enviar mensagem)
+- [x] Implementar API `consultationChat.getMessages` (buscar histórico)
+- [x] Configurar integração com Twilio Video API
+- [x] Instalar SDK Twilio no backend
+
+### Frontend - Portal do Médico
+- [x] Criar aba "Consultas" no menu lateral
+- [x] Página de listagem de consultas (`/consultas`)
+- [x] Listar consultas agendadas para o dia atual
+- [x] Filtrar consultas por status (agendada, em andamento, finalizada)
+- [x] Botão "Iniciar Consulta" para cada paciente
+- [x] Página para agendar nova consulta (`/nova-consulta`)
+- [x] Página de videochamada do médico (`/consulta/:id`)
+- [x] Interface de vídeo com Twilio Video SDK
+- [x] Vídeo local e remoto
+- [x] Chat lateral em tempo real
+- [x] Controles de áudio (mute/unmute)
+- [x] Controles de vídeo (ligar/desligar câmera)
+- [x] Botão para encerrar consulta
+- [x] Instalar twilio-video SDK no frontend
+
+### Frontend - Portal do Paciente
+- [ ] Criar página "Minhas Consultas" (`/paciente/consultas`)
+- [ ] Listar consultas agendadas do paciente
+- [ ] Botão "Entrar na Consulta" quando médico iniciar
+- [ ] Página de videochamada do paciente (`/paciente/consulta/:id`)
+- [ ] Interface de vídeo com Twilio Video SDK
+- [ ] Chat lateral em tempo real
+- [ ] Controles de áudio/vídeo
+- [ ] Indicador de status (aguardando médico/em consulta)
+
+### Segurança e Validações
+- [ ] Validar que apenas médico e paciente da consulta podem acessar
+- [ ] Criptografar mensagens do chat
+- [ ] Logs de auditoria para consultas (LGPD)
+- [ ] Timeout automático de salas não utilizadas
+- [ ] Validação de permissões de acesso
+
+### Configuração
+- [ ] Adicionar TWILIO_ACCOUNT_SID às variáveis de ambiente
+- [ ] Adicionar TWILIO_API_KEY às variáveis de ambiente
+- [ ] Adicionar TWILIO_API_SECRET às variáveis de ambiente
+- [ ] Documentar processo de obtenção das credenciais Twilio

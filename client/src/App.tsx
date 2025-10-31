@@ -18,6 +18,9 @@ import VisualizarAtestado from "./pages/VisualizarAtestado";
 import VisualizarPedidoExame from "./pages/VisualizarPedidoExame";
 import Templates from "./pages/Templates";
 import EditarPaciente from "./pages/EditarPaciente";
+import Consultas from "./pages/Consultas";
+import NovaConsulta from "./pages/NovaConsulta";
+import SalaConsulta from "./pages/SalaConsulta";
 
 function Router() {
   // Rotas do sistema Medko - Páginas de visualização implementadas
@@ -38,6 +41,9 @@ function Router() {
       <Route path="/medicamentos" component={Medicamentos} />
       <Route path="/configuracoes" component={Configuracoes} />
       <Route path="/templates" component={Templates} />
+      <Route path="/consultas" component={Consultas} />
+      <Route path="/nova-consulta" component={NovaConsulta} />
+      <Route path="/consulta/:id" component={SalaConsulta} />
       <Route path="/404" component={NotFound} />
       {/* Final fallback route */}
       <Route component={NotFound} />

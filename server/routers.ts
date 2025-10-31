@@ -15,6 +15,7 @@ import { generatePrescriptionPDF, generateCertificatePDF, generateQRCodeData, ty
 import { signDocument, getCertificateInfo } from "./digital-signature";
 import { storagePut } from "./storage";
 import { sendPrescription } from "./zenvia";
+import { generateVideoToken, createOrGetRoom, completeRoom, isTwilioConfigured } from "./twilio-helper";
 import { getDb } from "./db";
 import { certificates, examRequests } from "../drizzle/schema";
 import { eq } from "drizzle-orm";
@@ -861,6 +862,308 @@ export const appRouter = router({
         });
 
         return { success: true };
+      }),
+  }),
+
+  // Rotas de consultas (teleconsulta)
+  appointments: router({
+    // Listar consultas do médico (filtro por data opcional)
+    list: protectedProcedure
+      .input(z.object({ date: z.string().optional() }))
+      .query(async ({ ctx, input }) => {
+        if (ctx.user.role !== 'doctor' && ctx.user.role !== 'admin') {
+          throw new TRPCError({ code: 'FORBIDDEN', message: 'Only doctors can list appointments' });
+        }
+
+        const date = input.date ? new Date(input.date) : undefined;
+        const appointments = await db.getAppointmentsByDoctor(ctx.user.id, date);
+
+        // Buscar dados dos pacientes
+        const appointmentsWithPatients = await Promise.all(
+          appointments.map(async (apt) => {
+            const patient = await db.getPatientById(apt.patientId, ctx.user.id);
+            return {
+              ...apt,
+              patient: patient ? {
+                id: patient.id,
+                nomeCompleto: patient.nomeCompleto,
+              } : null,
+            };
+          })
+        );
+
+        return appointmentsWithPatients;
+      }),
+
+    // Listar consultas do paciente
+    listByPatient: protectedProcedure
+      .input(z.object({ patientId: z.number() }))
+      .query(async ({ ctx, input }) => {
+        const appointments = await db.getAppointmentsByPatient(input.patientId);
+
+        // Buscar dados do médico
+        const appointmentsWithDoctor = await Promise.all(
+          appointments.map(async (apt) => {
+            const doctor = await db.getUserByOpenId(ctx.user.openId);
+            return {
+              ...apt,
+              doctor: doctor ? {
+                id: doctor.id,
+                name: doctor.name,
+                crm: doctor.crm,
+                especialidade: doctor.especialidade,
+              } : null,
+            };
+          })
+        );
+
+        return appointmentsWithDoctor;
+      }),
+
+    // Buscar consulta por ID
+    getById: protectedProcedure
+      .input(z.object({ id: z.number() }))
+      .query(async ({ ctx, input }) => {
+        const appointment = await db.getAppointmentById(input.id);
+        if (!appointment) {
+          throw new TRPCError({ code: 'NOT_FOUND', message: 'Appointment not found' });
+        }
+
+        // Verificar permissão (médico ou paciente da consulta)
+        const isDoctor = appointment.doctorId === ctx.user.id;
+        const patient = await db.getPatientById(appointment.patientId, appointment.doctorId);
+        
+        if (!isDoctor && !patient) {
+          throw new TRPCError({ code: 'FORBIDDEN', message: 'Access denied' });
+        }
+
+        return {
+          ...appointment,
+          patient: patient ? {
+            id: patient.id,
+            nomeCompleto: patient.nomeCompleto,
+          } : null,
+        };
+      }),
+
+    // Criar nova consulta
+    create: protectedProcedure
+      .input(
+        z.object({
+          patientId: z.number(),
+          scheduledDate: z.string(),
+          motivo: z.string().optional(),
+        })
+      )
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== 'doctor' && ctx.user.role !== 'admin') {
+          throw new TRPCError({ code: 'FORBIDDEN', message: 'Only doctors can create appointments' });
+        }
+
+        await db.createAppointment({
+          doctorId: ctx.user.id,
+          patientId: input.patientId,
+          scheduledDate: new Date(input.scheduledDate),
+          motivo: input.motivo,
+        });
+
+        await logAudit({
+          userId: ctx.user.id,
+          userRole: ctx.user.role,
+          action: 'CREATE_APPOINTMENT' as any,
+          ipAddress: getClientIp(ctx.req),
+          userAgent: getUserAgent(ctx.req),
+        });
+
+        return { success: true };
+      }),
+
+    // Iniciar consulta (criar sala Twilio)
+    start: protectedProcedure
+      .input(z.object({ appointmentId: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== 'doctor' && ctx.user.role !== 'admin') {
+          throw new TRPCError({ code: 'FORBIDDEN', message: 'Only doctors can start appointments' });
+        }
+
+        if (!isTwilioConfigured()) {
+          throw new TRPCError({ 
+            code: 'PRECONDITION_FAILED', 
+            message: 'Twilio não configurado. Configure as variáveis TWILIO_ACCOUNT_SID, TWILIO_API_KEY e TWILIO_API_SECRET' 
+          });
+        }
+
+        const appointment = await db.getAppointmentById(input.appointmentId);
+        if (!appointment) {
+          throw new TRPCError({ code: 'NOT_FOUND', message: 'Appointment not found' });
+        }
+
+        if (appointment.doctorId !== ctx.user.id) {
+          throw new TRPCError({ code: 'FORBIDDEN', message: 'Access denied' });
+        }
+
+        // Criar sala Twilio
+        const roomName = `consultation_${input.appointmentId}_${Date.now()}`;
+        const room = await createOrGetRoom(roomName);
+
+        // Atualizar status da consulta
+        await db.updateAppointmentStatus(input.appointmentId, 'em_andamento', {
+          twilioRoomName: room.name,
+          twilioRoomSid: room.sid,
+          startedAt: new Date(),
+        });
+
+        // Gerar token para o médico
+        const doctorToken = generateVideoToken(`doctor_${ctx.user.id}`, room.name);
+
+        await logAudit({
+          userId: ctx.user.id,
+          userRole: ctx.user.role,
+          action: 'START_APPOINTMENT' as any,
+          resourceType: 'APPOINTMENT' as any,
+          resourceId: input.appointmentId,
+          ipAddress: getClientIp(ctx.req),
+          userAgent: getUserAgent(ctx.req),
+        });
+
+        return {
+          success: true,
+          roomName: room.name,
+          token: doctorToken,
+        };
+      }),
+
+    // Entrar na consulta (paciente)
+    join: protectedProcedure
+      .input(z.object({ appointmentId: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        if (!isTwilioConfigured()) {
+          throw new TRPCError({ 
+            code: 'PRECONDITION_FAILED', 
+            message: 'Twilio não configurado' 
+          });
+        }
+
+        const appointment = await db.getAppointmentById(input.appointmentId);
+        if (!appointment) {
+          throw new TRPCError({ code: 'NOT_FOUND', message: 'Appointment not found' });
+        }
+
+        // Verificar se a consulta está em andamento
+        if (appointment.status !== 'em_andamento') {
+          throw new TRPCError({ 
+            code: 'PRECONDITION_FAILED', 
+            message: 'Consulta ainda não foi iniciada pelo médico' 
+          });
+        }
+
+        if (!appointment.twilioRoomName) {
+          throw new TRPCError({ code: 'INTERNAL_SERVER_ERROR', message: 'Room not created' });
+        }
+
+        // Gerar token para o paciente
+        const patientToken = generateVideoToken(`patient_${appointment.patientId}`, appointment.twilioRoomName);
+
+        return {
+          success: true,
+          roomName: appointment.twilioRoomName,
+          token: patientToken,
+        };
+      }),
+
+    // Finalizar consulta
+    end: protectedProcedure
+      .input(z.object({ appointmentId: z.number() }))
+      .mutation(async ({ ctx, input }) => {
+        if (ctx.user.role !== 'doctor' && ctx.user.role !== 'admin') {
+          throw new TRPCError({ code: 'FORBIDDEN', message: 'Only doctors can end appointments' });
+        }
+
+        const appointment = await db.getAppointmentById(input.appointmentId);
+        if (!appointment) {
+          throw new TRPCError({ code: 'NOT_FOUND', message: 'Appointment not found' });
+        }
+
+        if (appointment.doctorId !== ctx.user.id) {
+          throw new TRPCError({ code: 'FORBIDDEN', message: 'Access denied' });
+        }
+
+        // Finalizar sala Twilio se existir
+        if (appointment.twilioRoomSid) {
+          try {
+            await completeRoom(appointment.twilioRoomSid);
+          } catch (error) {
+            console.error('Error completing Twilio room:', error);
+          }
+        }
+
+        // Atualizar status
+        await db.updateAppointmentStatus(input.appointmentId, 'finalizada', {
+          endedAt: new Date(),
+        });
+
+        await logAudit({
+          userId: ctx.user.id,
+          userRole: ctx.user.role,
+          action: 'END_APPOINTMENT' as any,
+          resourceType: 'APPOINTMENT' as any,
+          resourceId: input.appointmentId,
+          ipAddress: getClientIp(ctx.req),
+          userAgent: getUserAgent(ctx.req),
+        });
+
+        return { success: true };
+      }),
+  }),
+
+  // Rotas de chat da consulta
+  consultationChat: router({
+    // Enviar mensagem
+    sendMessage: protectedProcedure
+      .input(
+        z.object({
+          appointmentId: z.number(),
+          message: z.string(),
+        })
+      )
+      .mutation(async ({ ctx, input }) => {
+        const appointment = await db.getAppointmentById(input.appointmentId);
+        if (!appointment) {
+          throw new TRPCError({ code: 'NOT_FOUND', message: 'Appointment not found' });
+        }
+
+        // Determinar tipo de remetente
+        const isDoctor = appointment.doctorId === ctx.user.id;
+        const senderType = isDoctor ? 'doctor' : 'patient';
+        const senderId = ctx.user.id;
+
+        await db.createConsultationMessage({
+          appointmentId: input.appointmentId,
+          senderId,
+          senderType,
+          message: input.message,
+        });
+
+        return { success: true };
+      }),
+
+    // Buscar mensagens
+    getMessages: protectedProcedure
+      .input(z.object({ appointmentId: z.number() }))
+      .query(async ({ ctx, input }) => {
+        const appointment = await db.getAppointmentById(input.appointmentId);
+        if (!appointment) {
+          throw new TRPCError({ code: 'NOT_FOUND', message: 'Appointment not found' });
+        }
+
+        // Verificar permissão
+        const isDoctor = appointment.doctorId === ctx.user.id;
+        if (!isDoctor) {
+          // TODO: Verificar se é o paciente da consulta
+        }
+
+        const messages = await db.getConsultationMessages(input.appointmentId);
+        return messages;
       }),
   }),
 

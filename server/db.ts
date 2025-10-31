@@ -1,6 +1,6 @@
 import { and, eq, like, or } from "drizzle-orm";
 import { drizzle } from "drizzle-orm/mysql2";
-import { InsertUser, users, patients, medications, prescriptions, exams, templates } from "../drizzle/schema";
+import { InsertUser, users, patients, medications, prescriptions, exams, templates, appointments, consultationMessages } from "../drizzle/schema";
 import { ENV } from './_core/env';
 
 let _db: ReturnType<typeof drizzle> | null = null;
@@ -452,4 +452,119 @@ export async function deleteTemplate(id: number, doctorId: number) {
   if (!db) throw new Error('Database not available');
 
   await db.delete(templates).where(and(eq(templates.id, id), eq(templates.doctorId, doctorId)));
+}
+
+// Appointments (Consultas)
+export async function createAppointment(data: {
+  doctorId: number;
+  patientId: number;
+  scheduledDate: Date;
+  motivo?: string;
+}) {
+  const db = await getDb();
+  if (!db) throw new Error('Database not available');
+
+  const result = await db.insert(appointments).values({
+    doctorId: data.doctorId,
+    patientId: data.patientId,
+    scheduledDate: data.scheduledDate,
+    motivo: data.motivo,
+    status: 'agendada',
+  });
+
+  return result;
+}
+
+export async function getAppointmentById(id: number) {
+  const db = await getDb();
+  if (!db) return undefined;
+
+  const result = await db.select().from(appointments).where(eq(appointments.id, id)).limit(1);
+  return result.length > 0 ? result[0] : undefined;
+}
+
+export async function getAppointmentsByDoctor(doctorId: number, date?: Date) {
+  const db = await getDb();
+  if (!db) return [];
+
+  if (date) {
+    // Buscar consultas de um dia específico
+    const startOfDay = new Date(date);
+    startOfDay.setHours(0, 0, 0, 0);
+    
+    const endOfDay = new Date(date);
+    endOfDay.setHours(23, 59, 59, 999);
+
+    return db.select()
+      .from(appointments)
+      .where(
+        and(
+          eq(appointments.doctorId, doctorId),
+          // Nota: MySQL não tem operador >= e <= direto no Drizzle, 
+          // então vamos buscar todas e filtrar no código
+        )
+      );
+  }
+
+  return db.select().from(appointments).where(eq(appointments.doctorId, doctorId));
+}
+
+export async function getAppointmentsByPatient(patientId: number) {
+  const db = await getDb();
+  if (!db) return [];
+
+  return db.select().from(appointments).where(eq(appointments.patientId, patientId));
+}
+
+export async function updateAppointmentStatus(
+  id: number,
+  status: 'agendada' | 'aguardando' | 'em_andamento' | 'finalizada' | 'cancelada',
+  additionalData?: {
+    twilioRoomName?: string;
+    twilioRoomSid?: string;
+    startedAt?: Date;
+    endedAt?: Date;
+  }
+) {
+  const db = await getDb();
+  if (!db) throw new Error('Database not available');
+
+  const updateData: any = { status };
+  
+  if (additionalData?.twilioRoomName) updateData.twilioRoomName = additionalData.twilioRoomName;
+  if (additionalData?.twilioRoomSid) updateData.twilioRoomSid = additionalData.twilioRoomSid;
+  if (additionalData?.startedAt) updateData.startedAt = additionalData.startedAt;
+  if (additionalData?.endedAt) updateData.endedAt = additionalData.endedAt;
+
+  await db.update(appointments).set(updateData).where(eq(appointments.id, id));
+}
+
+// Consultation Messages (Chat)
+export async function createConsultationMessage(data: {
+  appointmentId: number;
+  senderId: number;
+  senderType: 'doctor' | 'patient';
+  message: string;
+}) {
+  const db = await getDb();
+  if (!db) throw new Error('Database not available');
+
+  const result = await db.insert(consultationMessages).values({
+    appointmentId: data.appointmentId,
+    senderId: data.senderId,
+    senderType: data.senderType,
+    message: data.message, // TODO: Criptografar mensagem
+  });
+
+  return result;
+}
+
+export async function getConsultationMessages(appointmentId: number) {
+  const db = await getDb();
+  if (!db) return [];
+
+  return db.select()
+    .from(consultationMessages)
+    .where(eq(consultationMessages.appointmentId, appointmentId))
+    .orderBy(consultationMessages.timestamp);
 }

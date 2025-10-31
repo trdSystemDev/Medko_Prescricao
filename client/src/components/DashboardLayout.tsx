@@ -21,7 +21,7 @@ import {
 } from "@/components/ui/sidebar";
 import { APP_LOGO, APP_TITLE, getLoginUrl } from "@/const";
 import { useIsMobile } from "@/hooks/useMobile";
-import { LayoutDashboard, LogOut, PanelLeft, Users, FileText, ClipboardList, Pill, History, Settings } from "lucide-react";
+import { LayoutDashboard, LogOut, PanelLeft, Users, FileText, ClipboardList, Pill, History, Settings, Video } from "lucide-react";
 import { CSSProperties, useEffect, useRef, useState } from "react";
 import { useLocation } from "wouter";
 import { DashboardLayoutSkeleton } from './DashboardLayoutSkeleton';
@@ -29,6 +29,7 @@ import { Button } from "./ui/button";
 
 const menuItems = [
   { icon: LayoutDashboard, label: "Dashboard", path: "/" },
+  { icon: Video, label: "Consultas", path: "/consultas" },
   { icon: Users, label: "Pacientes", path: "/pacientes" },
   { icon: FileText, label: "Nova Prescrição", path: "/prescricao/nova" },
   { icon: ClipboardList, label: "Novo Atestado", path: "/atestado/novo" },
